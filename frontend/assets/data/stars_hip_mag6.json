@@ -1,0 +1,15 @@
+{
+  "source": "ESA Hipparcos catalogue, naked-eye subset (V <= 6.0)",
+  "publisher": "European Space Agency / d3-celestial stars.6 extract",
+  "count": 5044,
+  "stride_floats": 4,
+  "fields": [
+    "ra_deg",
+    "dec_deg",
+    "v_mag",
+    "b_minus_v"
+  ],
+  "minMag": -1.44,
+  "maxMag": 6.0,
+  "bytes": 80704
+}

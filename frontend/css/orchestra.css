@@ -1,0 +1,723 @@
+/**
+ * frontend/css/orchestra.css
+ * NASA Flight-Deck Earth Orchestra Multi-Track DAW Stylesheet.
+ */
+
+/* Tokens (--orchestra-*, --font-*) are defined once in tokens.css. */
+
+/* Master Orchestra Dock Container */
+.orchestra-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--orchestra-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--orchestra-border);
+  padding: 0.55rem 1.25rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  z-index: 30;
+  box-shadow: none;
+  user-select: none;
+}
+
+/* Master Transport Controls Header */
+.orchestra-transport {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  border-bottom: 1px solid var(--orchestra-border);
+  padding-bottom: 0.5rem;
+}
+
+.transport-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.transport-btn {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--orchestra-border);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  transition: var(--tx-ui);
+}
+
+.transport-btn:hover,
+.transport-btn:focus-visible {
+  border-color: var(--signal);
+  background: var(--signal-wash);
+  color: var(--signal-hi);
+  box-shadow: none;
+}
+
+.transport-btn.btn-play {
+  background: var(--signal);
+  color: var(--ink);
+  border-color: var(--signal);
+  box-shadow: none;
+}
+
+.transport-btn.btn-play:hover,
+.transport-btn.btn-play:focus-visible {
+  background: var(--signal-hi);
+  border-color: var(--signal-hi);
+  color: var(--ink);
+}
+
+.transport-btn.active {
+  background: var(--signal-wash-2);
+  border-color: var(--signal);
+  color: var(--signal);
+  box-shadow: none;
+}
+
+/* Master Time & Scrubbing */
+.transport-scrubber-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.transport-time-display {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--bright);
+  min-width: 95px;
+  letter-spacing: 0.04em;
+  background: var(--scrim-70);
+  padding: 0.28rem 0.5rem;
+  border-radius: 0;
+  border: 1px solid var(--wh-12);
+  text-align: center;
+}
+
+.scrubber-timeline-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrubber container with 64-Band FFT Telemetry Backdrop & Oscilloscope Grid */
+.scrubber-spectrum-container {
+  position: relative;
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  background: var(--scrim-70);
+  background-image: 
+    linear-gradient(to right, var(--wh-03) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--wh-03) 1px, transparent 1px);
+  background-size: 24px 20px;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.spectrum-backdrop-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 36px;
+  display: block;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+  background-image: 
+    linear-gradient(to right, var(--wh-03) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--wh-03) 1px, transparent 1px);
+  background-size: 24px 20px;
+}
+
+.spectrum-freq-axis {
+  position: absolute;
+  bottom: 2px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--wh-35);
+}
+
+.timeline-decade-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--dim);
+  user-select: none;
+}
+
+.timeline-decade-ticks span {
+  position: relative;
+}
+
+.timeline-decade-ticks span::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 3px;
+  background: var(--wh-20);
+}
+
+.transport-seek-slider {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  width: 100%;
+  margin: 0 0.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--signal) 0%,
+    var(--signal) var(--fill-pct, 0%),
+    var(--panel) var(--fill-pct, 0%),
+    var(--panel) 100%
+  );
+  border: none;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.transport-seek-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+}
+
+.transport-seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 18px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  margin-top: -6px;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+.transport-seek-slider::-moz-range-track {
+  height: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+}
+
+.transport-seek-slider::-moz-range-thumb {
+  width: 12px;
+  height: 18px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+/* Compact Master Bus Module on right side of bottom dock */
+.transport-master-module {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--scrim-55);
+  border: 1px solid var(--wh-12);
+  border-radius: 0;
+  padding: 0.25rem 0.65rem;
+}
+
+.master-fader-block {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.master-fader-label {
+  font-weight: 700;
+  color: var(--text-soft);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+}
+
+.master-fader-block input[type="range"] {
+  width: 60px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: linear-gradient(to right, var(--fill-color, var(--paper)) 0%, var(--fill-color, var(--paper)) var(--fill-pct, 85%), var(--track) var(--fill-pct, 85%), var(--track) 100%);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.master-fader-block input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 2px;
+}
+
+.master-fader-block input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 6px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  margin-top: -5px;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+.master-fader-block input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+  border: 1px solid var(--wh-08);
+}
+
+.master-fader-block input[type="range"]::-moz-range-thumb {
+  width: 6px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+.master-bus-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-left: 1px solid var(--wh-12);
+  padding-left: 0.65rem;
+}
+
+.master-scope-canvas {
+  width: 120px;
+  height: 32px;
+  background: var(--well);
+  background-image: 
+    linear-gradient(to right, var(--wh-03) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--wh-03) 1px, transparent 1px);
+  background-size: 24px 20px;
+  border: 1px solid var(--wh-12);
+  border-radius: 3px;
+  display: block;
+}
+
+.master-bus-levels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  min-width: 52px;
+}
+
+.master-bus-vu {
+  width: 52px;
+  height: 4px;
+  background: var(--track-2);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid var(--wh-08);
+}
+
+.master-bus-rms-text {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--paper);
+  letter-spacing: 0.02em;
+}
+
+/* Master Volume (legacy compatibility token) */
+.transport-master-vol {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.transport-master-vol input[type="range"] {
+  width: 80px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.transport-master-vol input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 6px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  margin-top: -5px;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+.transport-master-vol input[type="range"]::-moz-range-thumb {
+  width: 6px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+/* 4-Channel Mixer Grid */
+.orchestra-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+/* Each strip carries its channel hue; the markup only names the track. */
+.channel-strip[data-track="surface_temperature"] { --strip-color: var(--c-temp); }
+.channel-strip[data-track="atmospheric_co2"] { --strip-color: var(--c-co2); }
+.channel-strip[data-track="ocean_temperature"] { --strip-color: var(--c-ocean); }
+.channel-strip[data-track="sea_ice_extent"] { --strip-color: var(--c-ice); }
+
+/* Individual Channel Strip */
+.channel-strip {
+  background: var(--orchestra-surface);
+  border: 1px solid var(--orchestra-border);
+  border-radius: 0;
+  height: 84px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.channel-strip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--strip-color, var(--bright));
+}
+
+.channel-strip:hover {
+  border-color: var(--orchestra-border-hover);
+}
+
+/* Track Header: Contains Row 1 and Row 2 */
+.strip-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+}
+
+/* Row 1: Track title & source pill */
+.strip-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.strip-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.strip-color-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--strip-color, var(--bright));
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+.strip-name {
+  font-family: var(--font-display, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--paper);
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.strip-dataset-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6875rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+
+/* Row 2: Live equation badge (formula line) */
+.strip-equation-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  font-family: 'JetBrains Mono', var(--font-mono, monospace);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: visible;
+  color: var(--muted);
+}
+
+.strip-equation-badge .eq-icon {
+  font-weight: 700;
+  color: var(--strip-color, var(--alarm));
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+.strip-equation-badge .eq-val {
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: visible;
+  letter-spacing: 0.01em;
+}
+
+.channel-strip:hover .strip-equation-badge {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Row 3: Strip Controls (Solo / Mute Buttons, Range Fader, Percentage) */
+.strip-switches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  width: 100%;
+}
+
+.btn-mute,
+.btn-solo {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  border: 1px solid var(--orchestra-border);
+  background: var(--track);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--tx-ui);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.btn-mute::after,
+.btn-solo::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  pointer-events: auto;
+}
+
+.btn-mute:hover {
+  border-color: var(--alarm);
+  color: var(--alarm);
+}
+
+.btn-solo:hover {
+  border-color: var(--c-co2);
+  color: var(--c-co2);
+}
+
+.btn-mute.active {
+  background: var(--alarm);
+  border-color: var(--alarm);
+  color: var(--bright);
+  box-shadow: none;
+}
+
+.btn-solo.active {
+  background: var(--c-co2);
+  border-color: var(--c-co2);
+  color: var(--on-bright);
+  box-shadow: none;
+}
+
+/* Faders Row */
+.strip-fader-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.strip-vol-slider {
+  flex: 1;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: linear-gradient(to right, var(--fill-color, var(--alarm)) 0%, var(--fill-color, var(--alarm)) var(--fill-pct, 80%), var(--track) var(--fill-pct, 80%), var(--track) 100%);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  border: 1px solid var(--wh-08);
+}
+
+.strip-vol-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 2px;
+}
+
+.strip-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 6px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  margin-top: -5px;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+.strip-vol-slider::-moz-range-track {
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+  border: 1px solid var(--wh-08);
+}
+
+.strip-vol-slider::-moz-range-thumb {
+  width: 6px;
+  height: 14px;
+  border-radius: 1px;
+  background: var(--paper);
+  cursor: pointer;
+  border: 1px solid var(--scrim-40);
+  box-shadow: none;
+}
+
+.strip-vol-val {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Channel Level Meter */
+.strip-meter-container {
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid var(--wh-08);
+}
+
+.strip-meter-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--strip-color, var(--bright));
+  /* Scale, never width: the bar is composited on the GPU and no layout runs
+     on every audio frame. JS sets --meter-fill (0 to 1). */
+  transform: scaleX(var(--meter-fill, 0));
+  transform-origin: left center;
+  transition: transform 0.05s linear;
+}
+
+/* Real-time Equation Badge (Physical Value -> Audio Parameter) */
+.timeline-date-display {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bright);
+  min-width: 72px;
+  letter-spacing: 0.04em;
+}
+
+/* Dimmed state when another track is soloed or track is muted */
+.channel-strip.silenced {
+  opacity: 0.35;
+  filter: grayscale(1.0);
+}

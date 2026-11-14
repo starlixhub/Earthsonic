@@ -1,0 +1,1161 @@
+/**
+ * frontend/css/frame.css
+ * EARTHSONIC — the instrument frame.
+ *
+ * One grid, four zones: mission rail, left readout, stage, right channels, dock.
+ * Loaded after the legacy sheets so it owns layout, surfaces and type; the
+ * legacy sheets keep the modal, drawer and toast chrome for later phases.
+ *
+ * Rules here are deliberately scoped under .frame or on the specific ids so
+ * they outrank the older `position: fixed` layout without deleting it.
+ */
+
+/* ============================================================================
+   1. Shell
+   ============================================================================ */
+
+html,
+body {
+  height: 100%;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--font-body);
+  letter-spacing: 0;
+}
+
+.frame {
+  display: grid;
+  grid-template-columns: var(--frame-col-left) minmax(0, 1fr) var(--frame-col-right);
+  grid-template-rows: var(--frame-row-head) minmax(0, 1fr) var(--frame-row-dock);
+  grid-template-areas:
+    "head head head"
+    "left stage right"
+    "dock dock dock";
+  width: 100%;
+  height: 100dvh;
+  background: var(--ink);
+}
+
+.frame-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--panel);
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline) transparent;
+}
+
+.frame-rail-left {
+  grid-area: left;
+  border-right: 1px solid var(--hairline);
+}
+
+.frame-rail-right {
+  grid-area: right;
+  border-left: 1px solid var(--hairline);
+}
+
+.frame-rail::-webkit-scrollbar {
+  width: 8px;
+}
+
+.frame-rail::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 4px;
+}
+
+/* ============================================================================
+   2. Mission rail (header)
+   ============================================================================ */
+
+.frame .mission-header {
+  grid-area: head;
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  min-height: var(--frame-row-head);
+  padding: 0 var(--sp-4);
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+  box-shadow: none;
+  backdrop-filter: none;
+  z-index: var(--z-head);
+}
+
+.frame .brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.frame .nasa-meatball {
+  width: 32px;
+  height: 32px;
+  filter: none;
+}
+
+.frame .mission-title {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.frame .mission-subtitle {
+  margin-top: 2px;
+  font-size: var(--fs-micro);
+  line-height: 1.2;
+  color: var(--dim);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46ch;
+}
+
+.frame .header-status-cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: var(--sp-4);
+}
+
+.frame .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 16ch;
+  text-transform: none;
+}
+
+/* The mission clock is a full timestamp ("2026-11-14 04:14:01 UTC"); the shared
+   16ch badge cap truncated it to an unreadable "6-11-14 04:0…". */
+.frame .status-badge-clock {
+  max-width: 30ch;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.frame .status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px var(--signal-wash);
+}
+
+.frame .header-command {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0;
+  border-top: 0;
+  overflow: visible;
+}
+
+/* Shared control language ---------------------------------------------------- */
+
+.frame .header-tour-btn,
+.frame .header-tool-btn,
+.frame .header-blueprint-btn,
+.frame .header-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background var(--dur-state) var(--ease),
+              border-color var(--dur-state) var(--ease),
+              color var(--dur-state) var(--ease),
+              transform var(--dur-press) var(--ease);
+}
+
+.frame .header-tour-btn {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 600;
+}
+
+.frame .header-tour-btn:hover,
+.frame .header-tour-btn:focus-visible {
+  background: var(--signal-hi);
+  border-color: var(--signal-hi);
+  color: var(--signal-ink);
+}
+
+.frame .header-tool-btn:hover,
+.frame .header-blueprint-btn:hover,
+.frame .header-more-btn:hover,
+.frame .header-tool-btn:focus-visible,
+.frame .header-blueprint-btn:focus-visible,
+.frame .header-more-btn:focus-visible {
+  background: var(--panel-3);
+  border-color: var(--hairline-2);
+}
+
+.frame .header-vr-btn {
+  border-color: var(--signal-glow);
+  color: var(--signal);
+}
+
+.frame .header-vr-btn:hover,
+.frame .header-vr-btn:focus-visible {
+  background: var(--signal-wash);
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.frame .header-tour-btn:active,
+.frame .header-tool-btn:active,
+.frame .header-blueprint-btn:active,
+.frame .header-more-btn:active {
+  transform: scale(0.985);
+}
+
+/* "More" disclosure --------------------------------------------------------- */
+
+.frame .header-more {
+  position: relative;
+}
+
+.frame .header-more > summary {
+  list-style: none;
+}
+
+.frame .header-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.frame .header-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 248px;
+  padding: var(--sp-2);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  box-shadow: 0 18px 40px var(--scrim-55);
+  z-index: var(--z-head);
+}
+
+.frame .header-more-menu > * {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.frame .header-preset-label {
+  margin-top: var(--sp-2);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-micro);
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+
+.frame .header-preset-select {
+  min-height: 36px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: var(--panel-3);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+}
+
+/* ============================================================================
+   3. Left readout
+   ============================================================================ */
+
+.frame .hud-panel {
+  min-width: 0;
+  padding: var(--sp-3);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  backdrop-filter: none;
+  box-shadow: none;
+  pointer-events: auto;
+  font-family: var(--font-body);
+}
+
+.frame .hud-kicker {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--dim);
+}
+
+.frame .hud-title {
+  font-size: var(--fs-label);
+  color: var(--muted);
+  margin-bottom: var(--sp-2);
+}
+
+.frame .hud-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-readout);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.frame .hud-subtext {
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--dim);
+  letter-spacing: 0.01em;
+}
+
+.rail-label {
+  padding: 0 0 var(--sp-1);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  color: var(--dim);
+  letter-spacing: 0.02em;
+}
+
+/* Layer switch: a vertical segmented control, not a sticker on the globe ----- */
+
+.frame .globe-layer-controls {
+  position: static;
+  inset: auto;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  z-index: auto;
+}
+
+.frame .globe-layer-controls .rail-label {
+  padding: var(--sp-2) var(--sp-3) var(--sp-1);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.frame .layer-btn {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-bottom: 1px solid var(--hairline-soft);
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  letter-spacing: 0;
+  transition: background var(--dur-state) var(--ease),
+              color var(--dur-state) var(--ease);
+}
+
+.frame .layer-btn:last-child {
+  border-bottom: 0;
+}
+
+.frame .layer-btn:hover,
+.frame .layer-btn:focus-visible {
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+.frame .layer-btn.active {
+  background: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 600;
+}
+
+/* Legend: four fixed columns, so labels can never collide -------------------- */
+
+.frame .globe-thermal-legend {
+  position: static;
+  inset: auto;
+  display: none;
+  padding: var(--sp-3);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text);
+  z-index: auto;
+}
+
+.frame .globe-thermal-legend.active {
+  display: block;
+}
+
+.frame .legend-title {
+  margin-bottom: var(--sp-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  color: var(--dim);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.frame .legend-bar {
+  width: 100%;
+  height: 6px;
+  margin: 0 0 var(--sp-1);
+  border-radius: 2px;
+  border: 1px solid var(--hairline-soft);
+  background: var(--ramp-zonal);
+}
+
+.frame .legend-labels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-1);
+  font-size: var(--fs-micro);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.frame .legend-labels span:nth-child(1) { text-align: left; }
+.frame .legend-labels span:nth-child(2) { text-align: center; }
+.frame .legend-labels span:nth-child(3) { text-align: center; }
+.frame .legend-labels span:nth-child(4) { text-align: right; }
+
+/* Geographic targets -------------------------------------------------------- */
+
+.frame .globe-geo-nav {
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: auto;
+  padding-top: var(--sp-2);
+  z-index: auto;
+}
+
+.frame .nav-target-btn {
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  transition: background var(--dur-state) var(--ease),
+              border-color var(--dur-state) var(--ease);
+}
+
+.frame .nav-target-btn:hover,
+.frame .nav-target-btn:focus-visible {
+  background: var(--panel-3);
+  border-color: var(--hairline-2);
+  color: var(--text);
+}
+
+/* ============================================================================
+   4. Stage
+   ============================================================================ */
+
+.frame .globe-viewport {
+  grid-area: stage;
+  position: relative;
+  inset: auto;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 40%, var(--ink) 0%, var(--ink) 55%, var(--ink) 100%);
+  user-select: none;
+  z-index: var(--z-stage);
+}
+
+.frame .globe-loading-screen {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  background: var(--ink);
+  z-index: 5;
+}
+
+/* ============================================================================
+   5. Right rail: telemetry table + channels
+   ============================================================================ */
+
+.frame .telemetry-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.frame .matrix-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--panel-2);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transition: background var(--dur-state) var(--ease);
+}
+
+.frame .matrix-cell.active {
+  background: var(--panel-3);
+  box-shadow: inset 2px 0 0 var(--signal);
+}
+
+.frame .matrix-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-micro);
+  color: var(--dim);
+  letter-spacing: 0.02em;
+}
+
+.frame .matrix-val {
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.channels-head {
+  padding: var(--sp-2) 0 0;
+}
+
+.frame .orchestra-channels-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+}
+
+.frame .channel-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--strip-color, var(--hairline));
+  border-radius: var(--r-sm);
+  transition: background var(--dur-state) var(--ease),
+              border-color var(--dur-state) var(--ease);
+}
+
+.frame .channel-strip::before {
+  display: none;
+}
+
+.frame .channel-strip:hover {
+  background: var(--panel-3);
+  border-color: var(--hairline-2);
+  border-left-color: var(--strip-color, var(--hairline));
+}
+
+.frame .strip-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.frame .strip-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.frame .strip-color-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--strip-color, var(--text));
+  flex-shrink: 0;
+}
+
+.frame .strip-name {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frame .strip-dataset-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.03em;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.frame .strip-equation-badge {
+  margin-top: 2px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frame .strip-equation-badge .eq-val {
+  color: var(--strip-color, var(--muted));
+}
+
+.frame .strip-switches {
+  display: grid;
+  grid-template-columns: 26px 26px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.frame .btn-mute,
+.frame .btn-solo {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur-state) var(--ease),
+              color var(--dur-state) var(--ease),
+              border-color var(--dur-state) var(--ease);
+}
+
+.frame .btn-mute:hover,
+.frame .btn-solo:hover {
+  border-color: var(--hairline-2);
+  color: var(--text);
+}
+
+.frame .btn-mute.active {
+  background: var(--temp-wash);
+  border-color: var(--c-temp);
+  color: var(--alarm-soft);
+}
+
+.frame .btn-solo.active {
+  background: var(--signal-wash);
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.frame .strip-fader-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.frame .strip-vol-slider {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--strip-color, var(--signal));
+}
+
+.frame .strip-vol-val {
+  width: 34px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   6. Dock (transport)
+   ============================================================================ */
+
+.frame .orchestra-dock {
+  grid-area: dock;
+  position: static;
+  inset: auto;
+  display: block;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel);
+  border-top: 1px solid var(--hairline);
+  backdrop-filter: none;
+  z-index: var(--z-dock);
+}
+
+.frame .orchestra-transport {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-4);
+  height: 100%;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.frame .transport-buttons {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.frame .transport-btn {
+  min-height: 44px;
+  min-width: 56px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0;
+  transition: background var(--dur-state) var(--ease),
+              border-color var(--dur-state) var(--ease),
+              color var(--dur-state) var(--ease),
+              transform var(--dur-press) var(--ease);
+}
+
+.frame .transport-btn:hover,
+.frame .transport-btn:focus-visible {
+  background: var(--panel-3);
+  border-color: var(--hairline-2);
+  color: var(--text);
+}
+
+.frame .transport-btn:active {
+  transform: scale(0.985);
+}
+
+.frame .transport-btn.btn-play {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 600;
+}
+
+.frame .transport-btn.btn-play:hover,
+.frame .transport-btn.btn-play:focus-visible {
+  background: var(--signal-hi);
+  border-color: var(--signal-hi);
+  color: var(--signal-ink);
+}
+
+.frame .transport-btn.active {
+  background: var(--signal-wash);
+  border-color: var(--signal-glow);
+  color: var(--signal);
+}
+
+.transport-time-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.frame .transport-time-display {
+  min-width: 108px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text);
+  letter-spacing: 0.02em;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.frame .timeline-date-display {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--signal);
+  letter-spacing: 0.02em;
+}
+
+.frame .transport-scrubber-wrap {
+  display: block;
+  flex: none;
+  min-width: 0;
+}
+
+.frame .scrubber-timeline-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.frame .scrubber-spectrum-container {
+  position: relative;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  overflow: hidden;
+}
+
+.frame .spectrum-backdrop-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.45;
+  pointer-events: none;
+  background-image: none;
+}
+
+.frame .spectrum-freq-axis {
+  /* legacy sheet pins this to bottom:2px with no positioned ancestor, which
+     floated the Hz labels over the page edge on every layout */
+  position: static;
+  inset: auto;
+  display: flex;
+  justify-content: space-between;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.frame .transport-seek-slider {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin: 0;
+  accent-color: var(--signal);
+  cursor: pointer;
+}
+
+.frame .timeline-decade-ticks {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.02em;
+}
+
+.frame .timeline-decade-ticks span {
+  position: relative;
+  text-align: left;
+}
+
+.frame .timeline-decade-ticks span::before {
+  display: none;
+}
+
+.frame .timeline-decade-ticks span:last-child {
+  text-align: right;
+}
+
+.frame .transport-master-module {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.frame .btn-export-wav {
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-state) var(--ease),
+              border-color var(--dur-state) var(--ease);
+}
+
+.frame .btn-export-wav:hover,
+.frame .btn-export-wav:focus-visible {
+  background: var(--panel-3);
+  border-color: var(--hairline-2);
+}
+
+.frame .master-fader-block {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--dim);
+}
+
+.frame .master-fader-block input[type="range"] {
+  width: 76px;
+  accent-color: var(--text);
+}
+
+.frame .master-fader-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  color: var(--dim);
+  letter-spacing: 0.02em;
+}
+
+.frame .master-bus-telemetry {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 132px;
+  min-height: 34px;
+}
+
+.frame .master-scope-canvas {
+  width: 96px;
+  height: 26px;
+  flex: 0 0 auto;
+  display: block;
+  opacity: 0.6;
+}
+
+.frame .master-bus-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 40px;
+}
+
+.frame .master-bus-vu {
+  width: 44px;
+  height: 3px;
+  background: var(--panel-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.frame .master-bus-rms-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--dim);
+}
+
+/* ============================================================================
+   7. Focus, motion, and narrow viewports
+   ============================================================================ */
+
+.frame :focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.frame .header-tour-btn:focus-visible,
+.frame .transport-btn.btn-play:focus-visible {
+  outline-color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame *,
+  .frame *::before,
+  .frame *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --frame-col-left: 260px;
+    --frame-col-right: 300px;
+  }
+
+  .frame .mission-subtitle {
+    display: none;
+  }
+
+  .frame .header-status-cluster {
+    display: none;
+  }
+}
+
+/* Narrow scrubbers squeeze six decade labels into ~200px, where they run
+   together ("198019902000201020202026"). Keep the endpoints readable. */
+@media (max-width: 1400px) {
+  .frame .timeline-decade-ticks span:nth-child(2),
+  .frame .timeline-decade-ticks span:nth-child(3),
+  .frame .timeline-decade-ticks span:nth-child(4),
+  .frame .timeline-decade-ticks span:nth-child(5) {
+    visibility: hidden;
+  }
+}
+
+/* Tablet and phone: one column, natural page height.
+   The grid could not hold auto-height rails — each got a squeezed row (~90px),
+   so three of the four channel strips and the whole "Jump to" group were cut
+   off. A flex stack lets the page scroll instead of the rails scrolling inside
+   a collapsed row. */
+@media (max-width: 900px) {
+  /* main.css pins html/body to 100vh with overflow hidden, which made the
+     stacked page unscrollable: everything below the first rail was unreachable. */
+  html,
+  body {
+    width: auto;
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .frame {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .frame .mission-header {
+    order: 0;
+    position: sticky;
+    top: 0;
+  }
+
+  .frame .globe-viewport {
+    order: 1;
+    height: 46vh;
+    min-height: 280px;
+    flex: 0 0 auto;
+  }
+
+  .frame .frame-rail-left { order: 2; }
+  .frame .frame-rail-right { order: 3; }
+  .frame .orchestra-dock { order: 4; }
+
+  .frame-rail {
+    border: 0;
+    border-top: 1px solid var(--hairline);
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+
+  .frame .globe-geo-nav {
+    margin-top: 0;
+  }
+
+  .frame .orchestra-transport {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--sp-2);
+    height: auto;
+  }
+}
+
+/* Phones: the rail and the tool row cannot share one 60px line, so the command
+   row gets its own line and the brand keeps its width. */
+@media (max-width: 720px) {
+  .frame .mission-header {
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    min-height: 0;
+  }
+
+  .frame .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .frame .mission-title {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+  }
+
+  .frame .header-command {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .frame .header-tour-btn {
+    padding: 0 var(--sp-2);
+  }
+
+  .frame .transport-master-module {
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+  }
+
+  .frame .btn-export-wav {
+    white-space: nowrap;
+  }
+}

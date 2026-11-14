@@ -1,0 +1,214 @@
+/**
+ * frontend/css/tokens.css
+ * EARTHSONIC — single source of truth for colour, type, spacing and motion.
+ *
+ * Loaded FIRST. The legacy stylesheets (globe.css, orchestra.css,
+ * visualizer.css) used to each open with their own `:root` block that
+ * redefined the same greys, borders and fonts under different prefixes; those
+ * blocks are gone and their variables are aliased here instead, so one change
+ * moves the whole flight deck.
+ */
+
+:root {
+  /* ---- Surface ramp -------------------------------------------------------
+     Cool graphite, never pure black: the globe is the only true black on the
+     screen, so it stays the brightest object in the frame. */
+  --ink: #05070b;
+  --panel: #0b1018;
+  --panel-2: #0f1620;
+  --panel-3: #141d28;
+  --hairline: #1a2330;
+  --hairline-soft: rgba(219, 228, 239, 0.07);
+
+  /* ---- Ink --------------------------------------------------------------- */
+  --text: #dbe4ef;
+  --muted: #8494a7;
+  --dim: #5b6b7d;
+
+  /* ---- Signal ------------------------------------------------------------
+     Exactly one accent means "now / selected / live". NASA red is reserved
+     for the meatball and for real alarm states, never for chrome. */
+  --signal: #f2a03d;
+  --signal-ink: #1a1206;
+  --signal-wash: rgba(242, 160, 61, 0.14);
+  --alarm: #fc3d21;
+
+  /* ---- Data channels (matched lightness, no channel shouts) --------------- */
+  --c-temp: #e2603f;
+  --c-co2: #d09a4a;
+  --c-ocean: #4f9fbf;
+  --c-ice: #9db2c4;
+
+  /* ---- Type -------------------------------------------------------------- */
+  --font-body: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-display: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+
+  --fs-micro: 10px;
+  --fs-label: 11px;
+  --fs-small: 12px;
+  --fs-body: 13px;
+  --fs-lead: 20px;
+  --fs-readout: 34px;
+  --fs-display: 56px;
+
+  /* ---- Space ------------------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* ---- Geometry ---------------------------------------------------------- */
+  --r-sm: 3px;
+  --r-md: 5px;
+  --frame-row-head: 60px;
+  --frame-row-dock: 96px;
+  --frame-col-left: 296px;
+  --frame-col-right: 336px;
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-press: 120ms;
+  --dur-state: 200ms;
+  --dur-panel: 320ms;
+
+  /* The one state transition. Named so `transition: all` never comes back:
+     layout properties are not in the list, so nothing repaints the frame. */
+  --tx-ui: color var(--dur-state) var(--ease),
+    background-color var(--dur-state) var(--ease),
+    border-color var(--dur-state) var(--ease),
+    box-shadow var(--dur-state) var(--ease),
+    transform var(--dur-state) var(--ease),
+    opacity var(--dur-state) var(--ease);
+
+  /* ---- Extended palette ---------------------------------------------------
+     These exist because the legacy sheets spoke in ~109 ad-hoc hex values.
+     Each literal was mapped onto one of these, so a `var()` now stands where a
+     colour used to be and the whole deck moves together. */
+  --bright: #eef3f9;
+  --paper: #f4f4f5;
+  --text-soft: #d7e1ed;
+  --on-bright: #0a0f16;
+  --well: #0a0f16;
+  --track: #18181b;
+  --track-2: #27272a;
+  --hairline-2: #2a3646;
+  --hairline-3: #3f3f46;
+  --nasa-blue: #0b3d91;
+  --green: #3d9b6d;
+  --signal-hi: #ffb366;
+  --alarm-soft: #ffb39c;
+  --pad-1: #0b132b;
+
+  /* Legend ramps. app.js overrides the live ramp per layer; these are the
+     resting defaults the CSS paints before the first frame. */
+  --ramp-temp: linear-gradient(to right, #0060e6, #00e0ff, #f0f0ff, #f8b800, #e62010);
+  --ramp-zonal: linear-gradient(to right, #2f6fd0, #7fb2e8, #d9dde2, #e8c37a, #d9663f);
+
+  /* Overlay ladder — white at six steps, for hairlines and container tints. */
+  --wh-03: rgba(255, 255, 255, 0.03);
+  --wh-05: rgba(255, 255, 255, 0.05);
+  --wh-08: rgba(255, 255, 255, 0.08);
+  --wh-10: rgba(255, 255, 255, 0.1);
+  --wh-12: rgba(255, 255, 255, 0.12);
+  --wh-16: rgba(255, 255, 255, 0.16);
+  --wh-20: rgba(255, 255, 255, 0.2);
+  --wh-25: rgba(255, 255, 255, 0.25);
+  --wh-35: rgba(255, 255, 255, 0.35);
+  --wh-40: rgba(255, 255, 255, 0.4);
+
+  /* Scrim ladder — the ink colour at four depth steps, for drawers and menus. */
+  --scrim-40: rgba(5, 7, 14, 0.4);
+  --scrim-55: rgba(5, 7, 14, 0.55);
+  --scrim-70: rgba(5, 7, 14, 0.7);
+  --scrim-90: rgba(5, 7, 14, 0.9);
+
+  /* Accent washes — one step per channel, all mixed against the panel. */
+  --signal-wash-2: rgba(242, 160, 61, 0.25);
+  --signal-glow: rgba(242, 160, 61, 0.52);
+  --alarm-wash: rgba(252, 61, 33, 0.12);
+  --alarm-wash-2: rgba(252, 61, 33, 0.22);
+  --nasa-wash: rgba(11, 61, 145, 0.3);
+  --co2-wash: rgba(208, 154, 74, 0.16);
+  --ocean-wash: rgba(79, 159, 191, 0.16);
+  --temp-wash: rgba(226, 96, 63, 0.18);
+  --ice-wash: rgba(157, 178, 196, 0.16);
+
+  /* ---- Layers ------------------------------------------------------------ */
+  --z-stage: 1;
+  --z-rail: 10;
+  --z-head: 40;
+  --z-dock: 45;
+  --z-modal: 60;
+  --z-toast: 80;
+
+  /* app.js measures the real header and overwrites this. */
+  --nasa-header-h: var(--frame-row-head);
+
+  /* Meter fill (0 to 1) written by the visualizer and the guided tour. */
+  --meter-fill: 0;
+
+  /* ======================================================================
+     Legacy aliases — kept so existing rules and markup keep resolving.
+     Do not add new code against these names.
+     ====================================================================== */
+  --compat-void: var(--ink);
+  --compat-navy: var(--panel);
+  --compat-cyan: var(--c-ocean);
+  --compat-blue: var(--c-ocean);
+  --compat-magenta: var(--c-temp);
+
+  --color-void: var(--ink);
+  --color-navy: var(--panel);
+  --color-navy-light: var(--panel);
+  --color-nasa-blue: #0b3d91;
+  --color-surface-panel: var(--panel);
+  --color-surface-hover: var(--signal-wash);
+  --color-border: var(--hairline);
+  --color-border-glow: transparent;
+  --color-nasa-red: var(--alarm);
+  --color-delta: var(--signal);
+  --color-cyan: var(--c-ocean);
+  --color-blue: var(--c-ocean);
+  --color-amber: var(--signal);
+  --color-crimson: var(--alarm);
+  --color-ice: var(--c-ice);
+  --color-magenta: var(--c-temp);
+  --color-green: #3d9b6d;
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --backdrop-blur: blur(10px);
+
+  --globe-bg: var(--ink);
+  --globe-navy: var(--panel);
+  --globe-cyan: var(--c-ocean);
+  --globe-blue: var(--c-ocean);
+  --globe-amber: var(--signal);
+  --globe-crimson: var(--alarm);
+  --globe-ice: var(--c-ice);
+  --globe-border: var(--hairline);
+  --globe-glow: transparent;
+
+  --orchestra-bg: var(--panel);
+  --orchestra-surface: var(--panel-2);
+  --orchestra-border: var(--hairline);
+  --orchestra-border-hover: var(--signal);
+  --orchestra-cyan: var(--c-ocean);
+  --orchestra-blue: var(--c-ocean);
+  --orchestra-amber: var(--signal);
+  --orchestra-red: var(--alarm);
+  --orchestra-ice: var(--c-ice);
+
+  --vis-bg: var(--panel);
+  --vis-surface: var(--panel-2);
+  --vis-border: var(--hairline);
+  --vis-border-glow: transparent;
+  --vis-cyan: var(--c-ocean);
+  --vis-blue: var(--c-ocean);
+  --vis-nasa-blue: #0b3d91;
+  --vis-nasa-red: var(--alarm);
+  --vis-amber: var(--signal);
+  --vis-red: var(--alarm);
+}

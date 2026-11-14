@@ -1,0 +1,182 @@
+/**
+ * frontend/css/visualizer.css
+ * NASA Flight-Deck Real-Time Audio Visualizer HUD Stylesheet.
+ */
+
+/* Tokens (--vis-*, --font-*) are defined once in tokens.css. */
+
+/* Master Visualizer HUD Container */
+.visualizer-hud {
+  background: var(--vis-bg);
+  border-top: 1px solid var(--vis-border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  z-index: 25;
+  box-shadow: none;
+  user-select: none;
+}
+
+/* Top Visualizer Telemetry Bar */
+.visualizer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--wh-08);
+  padding-bottom: 0.4rem;
+}
+
+.visualizer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--paper);
+  letter-spacing: 0.08em;
+}
+
+.visualizer-badge {
+  background: var(--track-2);
+  border: 1px solid var(--hairline-3);
+  color: var(--text-soft);
+  font-size: 0.6875rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.visualizer-metrics {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.metric-label {
+  color: var(--dim);
+  font-size: 0.6875rem;
+}
+
+.metric-val {
+  font-weight: 700;
+  color: var(--bright);
+}
+
+/* Dual Canvas Grid (Spectrum & Waveform) - Reduced height by 35% */
+.visualizer-canvas-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1rem;
+  height: 58px;
+}
+
+/* Canvas Viewport Cards with Technical Oscilloscope Grid */
+.canvas-card {
+  background: var(--vis-surface);
+  background-image: 
+    linear-gradient(to right, var(--wh-03) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--wh-03) 1px, transparent 1px);
+  background-size: 24px 20px;
+  border: 1px solid var(--vis-border);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-card-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--wh-40);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.canvas-card-axis {
+  position: absolute;
+  bottom: 3px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--wh-35);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.visualizer-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Bottom VU Meter Bar */
+.visualizer-vu-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--vis-surface);
+  border: 1px solid var(--vis-border);
+  border-radius: 4px;
+  padding: 0.35rem 0.75rem;
+}
+
+.vu-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  min-width: 75px;
+}
+
+.vu-meter-track {
+  flex: 1;
+  height: 8px;
+  background: var(--track);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--wh-10);
+}
+
+.vu-meter-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--text-soft);
+  /* Scaled, not widened: the meter updates every animation frame. */
+  transform: scaleX(var(--meter-fill, 0));
+  transform-origin: left center;
+  transition: transform 0.06s ease-out, background-color 0.15s;
+  box-shadow: none;
+}
+
+/* VU Scale Ticks */
+.vu-scale-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--dim);
+  min-width: 140px;
+}
+
+.vu-scale-ticks span.warn {
+  color: var(--vis-amber);
+}
+
+.vu-scale-ticks span.clip {
+  color: var(--vis-red);
+}

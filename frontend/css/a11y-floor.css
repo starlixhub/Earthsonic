@@ -1,0 +1,27 @@
+/**
+ * frontend/css/a11y-floor.css
+ * Two floors the rest of the sheet does not guarantee:
+ *
+ *   1. A heading reset, so EARTHSONIC can be the document's h1 without the UA
+ *      doubling its size. Kept as an element selector on purpose (specificity
+ *      0,0,1) so every existing .mission-title rule still wins.
+ *   2. prefers-reduced-motion, which the console ignored entirely: the loading
+ *      spinner, telemetry pulse and every panel transition ran on a loop.
+ */
+
+h1 {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

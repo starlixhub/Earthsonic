@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Python caches and virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+env/
+.venv/
+
+# Environment and secrets
+.env
+.env.*
+*.log
+
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Agent caches and scratch
+.agents/
+.freebuff/
+.dev_visual_captures/
+node_test_full.*
+pytest_output.txt
+
+# Raw heavy datasets if any
+data/raw/svs/

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EARTHSONIC // 3D EARTH GLOBE | NASA Earth Science · Space Apps Challenge 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/globe.css">
+  <link rel="stylesheet" href="/css/orchestra.css">
+  <link rel="stylesheet" href="/css/visualizer.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/frame.css">
+  <link rel="stylesheet" href="/css/a11y-floor.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three/three.module.js",
+      "three/addons/controls/OrbitControls.js": "/vendor/three/OrbitControls.js",
+      "three/addons/": "/vendor/three/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <a class="skip-link" href="#globe-viewport-container">Skip to Earth viewport</a>
+
+  <div class="frame">
+
+    <!-- 1. Mission rail: one row. Secondary tools live behind "More". -->
+    <header class="mission-header" role="banner">
+      <div class="brand">
+        <svg class="nasa-meatball" viewBox="0 0 64 64" role="img" aria-label="NASA">
+          <circle cx="32" cy="32" r="31" fill="#0B3D91"/>
+          <circle cx="32" cy="32" r="31" fill="none" stroke="#ffffff" stroke-width="1.4"/>
+          <g fill="#ffffff">
+            <circle cx="20" cy="14" r="1.05"/>
+            <circle cx="28" cy="11" r="0.85"/>
+            <circle cx="37" cy="13" r="1.05"/>
+            <circle cx="16" cy="22" r="0.75"/>
+            <circle cx="44" cy="18" r="0.9"/>
+            <circle cx="24" cy="20" r="0.7"/>
+            <circle cx="40" cy="24" r="0.7"/>
+          </g>
+          <ellipse cx="32" cy="32" rx="27" ry="10.5" fill="none" stroke="#ffffff" stroke-width="2.1" transform="rotate(-28 32 32)"/>
+          <path fill="#FC3D21" d="M7.5 38.2 L57 26.4 L57 32.2 L7.5 43.8 Z"/>
+          <text x="32" y="38.5" text-anchor="middle" fill="#ffffff" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="1.4">NASA</text>
+        </svg>
+        <div class="brand-copy">
+          <h1 class="mission-title">EARTHSONIC</h1>
+          <div class="mission-subtitle">The Earth Information Jukebox · Authentic NASA / NOAA observations, 1979–2026</div>
+        </div>
+      </div>
+
+              <div class="header-status-cluster">
+        <div id="mission-clock" class="status-badge status-badge-clock status-badge-clock-wide" title="Mission clock, coordinated universal time" tabindex="0" role="timer" aria-live="off" aria-label="Mission clock, coordinated universal time"></div>
+      </div>
+
+      <nav class="header-command" aria-label="Mission tools">
+        <button class="header-tour-btn" id="btn-judge-tour" title="Guided mission" aria-label="Guided mission">Guided mission<span class="sr-only" style="display:none" aria-hidden="true">GUIDED MISSION (45s)</span></button>
+        <button class="header-tool-btn header-vr-btn" id="btn-enter-vr" title="Orbital Examine VR Mode (WebXR / Mobile Stereo)" aria-label="Enter Orbital Examine VR mode">Orbital examine VR</button>
+
+        <details class="header-more">
+          <summary class="header-more-btn" aria-label="More mission tools">More</summary>
+          <div class="header-more-menu">
+            <button class="header-blueprint-btn header-action-btn" id="btn-open-sensors" title="Instrument architecture for OCO-2, MODIS, Jason-3, and AMSR2" type="button">Instruments</button>
+            <button class="header-tool-btn header-action-btn" id="btn-open-comparison" title="Compare two time periods from the same dataset" type="button">Compare</button>
+            <button class="header-tool-btn header-action-btn" id="btn-open-info" title="Dataset provenance, units, and sonification mapping" type="button">Data &amp; methods</button>
+            <label class="header-preset-label" for="mission-preset-select">Jump to record</label>
+            <select id="mission-preset-select" class="header-preset-select" title="Jump to a documented climate event" aria-label="Jump to a documented climate event">
+              <option value="">Select an event record</option>
+              <option value="PRESET_1988_CO2">1988 · Mauna Loa CO₂ near 350 ppm</option>
+              <option value="PRESET_1998_EL_NINO">1997–98 · Super El Niño</option>
+              <option value="PRESET_2012_ARCTIC">2012 · Arctic sea-ice minimum</option>
+              <option value="PRESET_DELTA_1980_2025">Δ · 1980 versus 2025</option>
+            </select>
+          </div>
+        </details>
+      </nav>
+    </header>
+
+    <!-- 2. Left rail: what is on screen now, and what the globe is showing. -->
+    <aside class="frame-rail frame-rail-left" aria-label="Observation readout">
+      <section class="hud-panel hud-now">
+        <div class="hud-kicker">Active observation</div>
+        <div class="hud-title" id="hud-observation-subtitle" title="Surface temperature anomaly, NASA GISS GISTEMP v4, 1951–1980 baseline">Surface temperature anomaly</div>
+        <div id="hud-var-value" class="hud-value">+1.28 °C</div>
+        <div id="hud-var-meta" class="hud-subtext">NASA GISS GISTEMP v4 · 1951–1980 baseline</div>
+      </section>
+
+      <nav class="globe-layer-controls" aria-label="Observation layers">
+        <div class="rail-label">Layer</div>
+        <button class="layer-btn active" data-layer="temperature" aria-pressed="true">Temperature</button>
+        <button class="layer-btn" data-layer="co2" aria-pressed="false">Carbon dioxide</button>
+        <button class="layer-btn" data-layer="ocean" aria-pressed="false">Ocean heat</button>
+        <button class="layer-btn" data-layer="sea_ice" aria-pressed="false">Sea ice</button>
+      </nav>
+
+      <div class="globe-geo-nav" aria-label="Geographic targets">
+        <div class="rail-label">Jump to</div>
+        <button class="nav-target-btn" id="btn-fly-mlo" title="Fly to Mauna Loa Observatory, Hawaii" aria-label="Mauna Loa Observatory">
+          <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 2a4 4 0 0 0-3.28 6.83L2.3 7.5l-.83 7.47h17.54l-.64-7.07A4 4 0 0 0 12 2Zm0 13a4 4 0 0 1-3.28-1.86l.05-.41.73-.61A4 4 0 0 1 17.63 8H6.37A4 4 0 0 1 12 15Zm0-3a3 3 0 0 0 3-3 3 3 0 0 0-3 3Z" fill="currentColor"/></svg>
+          Mauna Loa Observatory
+        </button>
+        <button class="nav-target-btn" id="btn-fly-arctic" title="Fly to the North Pole" aria-label="Arctic 90 degrees north">
+          <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 2a4 4 0 0 0-3.28 6.83L2.3 7.5l-.83 7.47h17.54l-.64-7.07A4 4 0 0 0 12 2Zm0 13a4 4 0 0 1-3.28-1.86l.05-.41.73-.61A4 4 0 0 1 17.63 8H6.37A4 4 0 0 1 12 15Zm0-3a3 3 0 0 0 3-3 3 3 0 0 0-3 3Z" fill="currentColor"/></svg>
+          Arctic · 90°N
+        </button>
+        <button class="nav-target-btn" id="btn-fly-antarctic" title="Fly to the South Pole" aria-label="Antarctic 90 degrees south">
+          <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 2a4 4 0 0 0-3.28 6.83L2.3 7.5l-.83 7.47h17.54l-.64-7.07A4 4 0 0 0 12 2Zm0 13a4 4 0 0 1-3.28-1.86l.05-.41.73-.61A4 4 0 0 1 17.63 8H6.37A4 4 0 0 1 12 15Z" fill="currentColor" transform="rotate(180)" transform-origin="12 12"/></svg>
+          Antarctic · 90°S
+        </button>
+        <button class="nav-target-btn nav-reset-btn" id="btn-reset-cam" title="Return the globe to its default orbital view" aria-label="Reset view">
+          <svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 2a4 4 0 0 0-3.28 6.83L2.3 7.5l-.83 7.47h17.54l-.64-7.07A4 4 0 0 0 12 2Zm0 13a4 4 0 0 1-3.28-1.86l.05-.41.73-.61A4 4 0 0 1 17.63 8H6.37A4 4 0 0 1 12 15Z" fill="currentColor"/></svg>
+          Reset view
+        </button>
+      </div>
+    </aside>
+
+    <!-- 3. Stage: the globe, nothing pinned over it. -->
+    <main id="globe-viewport-container" class="globe-viewport" tabindex="-1">
+
+      <div id="loading-screen" class="globe-loading-screen" role="status" aria-live="polite">
+        <svg class="nasa-meatball nasa-meatball-lg" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="31" fill="#0B3D91"/>
+          <circle cx="32" cy="32" r="31" fill="none" stroke="#ffffff" stroke-width="1.4"/>
+          <ellipse cx="32" cy="32" rx="27" ry="10.5" fill="none" stroke="#ffffff" stroke-width="2.1" transform="rotate(-28 32 32)"/>
+          <path fill="#FC3D21" d="M7.5 38.2 L57 26.4 L57 32.2 L7.5 43.8 Z"/>
+          <text x="32" y="38.5" text-anchor="middle" fill="#ffffff" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="1.4">NASA</text>
+        </svg>
+        <div class="globe-spinner" aria-hidden="true"></div>
+        <div class="globe-loading-text">Loading NASA Earth observations</div>
+        <div class="globe-loading-sub">GISTEMP v4 · Mauna Loa CO₂ · NOAA ocean heat · NSIDC sea ice</div>
+      </div>
+
+    </main>
+
+    <!-- 4. Right rail: the four measured variables, as a sonification deck to mute / solo / level. -->
+    <aside class="frame-rail frame-rail-right" aria-label="Sonification channels">
+      <div class="orchestra-channels-grid">
+        <div class="channel-strip" id="strip-surface_temperature" data-track="surface_temperature" style="--strip-hue: 10;">
+          <div class="strip-header">
+            <div class="strip-row-top">
+              <div class="strip-title-group">
+                <span class="strip-color-dot"></span>
+                <span class="strip-name">Surface Temperature</span>
+              </div>
+              <span class="strip-dataset-badge">GISTEMP v4</span>
+            </div>
+            <div class="strip-equation-badge" id="eq-badge-surface_temperature" title="CO₂-warmed temperature anomaly crossfades bass layer into percussive voice">
+              <span class="eq-icon">f(T):</span>
+              <span class="eq-val" id="eq-text-surface_temperature">+1.38 °C → 55 Hz pulse</span>
+            </div>
+          </div>
+          <div class="strip-switches">
+            <button class="btn-mute" data-track="surface_temperature" title="Mute surface temperature channel">M</button>
+            <button class="btn-solo" data-track="surface_temperature" title="Solo surface temperature channel">S</button>
+            <div class="strip-fader-row">
+              <input type="range" class="strip-vol-slider" data-track="surface_temperature" min="0" max="1" step="0.01" value="0.85" aria-label="Surface temperature level">
+              <span class="strip-vol-val" data-vol-label="surface_temperature">85%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="channel-strip" id="strip-atmospheric_co2" data-track="atmospheric_co2" style="--strip-hue: 150;">
+          <div class="strip-header">
+            <div class="strip-row-top">
+              <div class="strip-title-group">
+                <span class="strip-color-dot"></span>
+                <span class="strip-name">Atmospheric CO2</span>
+              </div>
+              <span class="strip-dataset-badge">MAUNA LOA</span>
+            </div>
+            <div class="strip-equation-badge" id="eq-badge-atmospheric_co2" title="Harmonic drive increases with Mauna Loa CO₂ mole-fraction">
+              <span class="eq-icon">f(CO₂):</span>
+              <span class="eq-val" id="eq-text-atmospheric_co2">426.1 ppm → 72% Drive</span>
+            </div>
+          </div>
+          <div class="strip-switches">
+            <button class="btn-mute" data-track="atmospheric_co2" title="Mute atmospheric CO₂ channel">M</button>
+            <button class="btn-solo" data-track="atmospheric_co2" title="Solo atmospheric CO₂ channel">S</button>
+            <div class="strip-fader-row">
+              <input type="range" class="strip-vol-slider" data-track="atmospheric_co2" min="0" max="1" step="0.01" value="0.80" aria-label="Carbon dioxide level">
+              <span class="strip-vol-val" data-vol-label="atmospheric_co2">80%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="channel-strip" id="strip-ocean_temperature" data-track="ocean_temperature" style="--strip-hue: 190;">
+          <div class="strip-header">
+            <div class="strip-row-top">
+              <div class="strip-title-group">
+                <span class="strip-color-dot"></span>
+                <span class="strip-name">Ocean Heat</span>
+              </div>
+              <span class="strip-dataset-badge">NOAA NCEI</span>
+            </div>
+            <div class="strip-equation-badge" id="eq-badge-ocean_temperature" title="Low-pass cutoff opens as ocean heat content rises">
+              <span class="eq-icon">f(OHC):</span>
+              <span class="eq-val" id="eq-text-ocean_temperature">+1.10°C → 95 Hz LPF</span>
+            </div>
+          </div>
+          <div class="strip-switches">
+            <button class="btn-mute" data-track="ocean_temperature" title="Mute ocean heat channel">M</button>
+            <button class="btn-solo" data-track="ocean_temperature" title="Solo ocean heat channel">S</button>
+            <div class="strip-fader-row">
+              <input type="range" class="strip-vol-slider" data-track="ocean_temperature" min="0" max="1" step="0.01" value="0.85" aria-label="Ocean heat level">
+              <span class="strip-vol-val" data-vol-label="ocean_temperature">85%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="channel-strip" id="strip-sea_ice_extent" data-track="sea_ice_extent" style="--strip-hue: 205;">
+          <div class="strip-header">
+            <div class="strip-row-top">
+              <div class="strip-title-group">
+                <span class="strip-color-dot"></span>
+                <span class="strip-name">Sea Ice Extent</span>
+              </div>
+              <span class="strip-dataset-badge">NSIDC</span>
+            </div>
+            <div class="strip-equation-badge" id="eq-badge-sea_ice_extent" title="Ice loss crossfades chime texture into wind noise">
+              <span class="eq-icon">f(Ice):</span>
+              <span class="eq-val" id="eq-text-sea_ice_extent">4.81 M km² → Wind Mix</span>
+            </div>
+          </div>
+          <div class="strip-switches">
+            <button class="btn-mute" data-track="sea_ice_extent" title="Mute">M</button>
+            <button class="btn-solo" data-track="sea_ice_extent" title="Solo">S</button>
+            <div class="strip-fader-row">
+              <input type="range" class="strip-vol-slider" data-track="sea_ice_extent" min="0" max="1" step="0.01" value="0.75" aria-label="Sea ice level">
+              <span class="strip-vol-val" data-vol-label="sea_ice_extent">75%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 5. Dock: transport only. -->
+    <footer class="orchestra-dock" role="contentinfo">
+      <div class="orchestra-transport">
+        <div class="transport-buttons">
+          <button id="btn-master-play" class="transport-btn btn-play" aria-label="Play sonification">Play</button>
+          <button id="btn-master-pause" class="transport-btn" aria-label="Pause sonification" title="Pause">Pause</button>
+          <button id="btn-master-stop" class="transport-btn" aria-label="Stop sonification" title="Stop">Stop</button>
+          <button id="btn-master-loop" class="transport-btn active" aria-label="Loop playback" aria-pressed="true" title="Loop playback">Loop</button>
+        </div>
+
+        <div class="transport-time-cluster">
+          <div id="orchestra-time-display" class="transport-time-display" aria-live="off">00:00 / 00:20</div>
+          <div id="timeline-date-label" class="timeline-date-display" aria-live="off">1979-01</div>
+        </div>
+
+        <div class="transport-scrubber-wrap">
+          <div class="scrubber-timeline-block">
+            <div class="scrubber-spectrum-container">
+              <canvas id="spectrum-canvas" class="visualizer-canvas spectrum-backdrop-canvas" width="330" height="50" aria-hidden="true"></canvas>
+              <input type="range" id="orchestra-seek-slider" class="transport-seek-slider" min="0" max="20" step="0.05" value="0" aria-label="Playback position">
+            </div>
+            <div class="spectrum-freq-axis spectrum-freq-axis-hz" aria-hidden="true">
+              <span>60Hz</span>
+              <span>250Hz</span>
+              <span>1kHz</span>
+              <span>4kHz</span>
+              <span>16kHz</span>
+            </div>
+            <div class="timeline-decade-ticks timeline-decade-ticks-years" aria-hidden="true">
+              <span>1980</span>
+              <span>1990</span>
+              <span>2000</span>
+              <span>2010</span>
+              <span>2020</span>
+              <span>2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="transport-master-module">
+          <button id="btn-export-wav" class="btn-export-wav" title="Download a 44.1 kHz stereo mix of the current sonification">Export WAV</button>
+          <div class="master-fader-block">
+            <span class="master-fader-label">Master</span>
+            <input type="range" id="master-vol-slider" min="0" max="1" step="0.01" value="0.85" aria-label="Master level">
+            <span id="master-vol-label">85%</span>
+          </div>
+          <div class="master-bus-telemetry" title="Waveform and RMS level">
+            <canvas id="waveform-canvas" class="visualizer-canvas master-scope-canvas" width="130" height="34" aria-hidden="true"></canvas>
+            <div class="master-bus-levels">
+              <div class="master-bus-vu">
+                <div class="vu-meter-bar" id="rms-meter-bar"></div>
+              </div>
+              <span class="master-bus-rms-text" id="rms-db-text">−∞ dB</span>
+              <span id="peak-db-text" style="display:none;">−∞ dB</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <div id="comparison-modal" class="comparison-modal-overlay hidden"></div>
+  <div id="info-drawer" class="info-drawer-overlay hidden"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Desktop VR Modal -->
+  <div id="vr-desktop-modal" class="vr-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="vr-modal-title">
+    <div class="vr-modal-dialog">
+      <div class="vr-modal-header">
+        <div class="vr-modal-title-group">
+          <span class="vr-modal-badge">MISSION CAPABILITY</span>
+          <h2 id="vr-modal-title" class="vr-modal-title">ORBITAL EXAMINE VR — MOBILE LAUNCH BRIDGE</h2>
+        </div>
+        <button type="button" id="btn-close-vr-modal" class="vr-modal-close-btn" aria-label="Close VR launch modal" title="Close modal">×</button>
+      </div>
+
+      <div class="vr-modal-body">
+        <div class="vr-modal-telemetry-banner">
+          <span class="telemetry-dot" aria-hidden="true"></span>
+          <span class="telemetry-text">LOCAL WI-FI BRIDGE ONLINE · WEBAUDIO HRTF &amp; GYRO GLIDER READY</span>
+        </div>
+
+        <div class="vr-qr-stage">
+          <div class="vr-qr-card">
+            <canvas id="vr-qr-canvas" width="220" height="220" aria-label="QR Code to launch Orbital Examine VR on mobile"></canvas>
+            <div id="vr-qr-loading" class="vr-qr-loading-spinner hidden">
+              <div class="vr-spinner-amber"></div>
+              <span>GENERATING SCANNABLE MATRIX…</span>
+            </div>
+          </div>
+          <div class="vr-instructions">
+            <h3 class="vr-instructions-heading">PHONE VR HEADSET LAUNCH:</h3>
+            <ol class="vr-steps-list">
+              <li>Connect your smartphone to the <strong>same Wi-Fi network</strong> as this PC.</li>
+              <li>Open your phone's <strong>Camera</strong> or QR scanner app and point it at the code.</li>
+              <li>Tap <strong>[ TAP TO LOCK LANDSCAPE &amp; INSERT INTO VR HEADSET ]</strong> to unlock spatial audio and fullscreen stereo.</li>
+              <li>Slide phone into Google Cardboard, Daydream, or mobile VR enclosure.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="vr-url-bar">
+          <label for="vr-url-input" class="vr-url-label">Direct mobile URL:</label>
+          <div class="vr-url-input-group">
+            <input type="text" id="vr-url-input" class="vr-url-input" readonly value="http://localhost:5000/?vr=1" spellcheck="false" aria-label="Direct mobile VR launch URL">
+            <button type="button" id="btn-copy-vr-link" class="vr-copy-btn" title="Copy URL to clipboard">
+              <span id="btn-copy-vr-link-text">COPY LINK</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="vr-modal-pc-fallback">
+          <div class="vr-fallback-divider"><span>OR TEST LOCALLY</span></div>
+          <button type="button" id="btn-enter-pc-stereo" class="btn-pc-stereo">
+            ENTER SPLIT-SCREEN VR ON THIS PC
+          </button>
+          <span class="vr-fallback-note">Launches side-by-side stereo pass (eyeSep = 0.064, FOV 75°) directly in this browser with mouse-drag gyro emulation.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile VR Launcher Overlay (activated when ?vr=1) -->
+  <div id="mobile-vr-launcher" class="mobile-vr-launcher-overlay hidden" role="dialog" aria-modal="true" aria-label="Mobile VR Headset Launcher">
+    <button type="button" id="btn-mobile-vr-tap" class="mobile-vr-tap-btn" aria-label="Tap to lock landscape and insert into VR headset">
+      <div class="mobile-vr-tap-content">
+        <div class="mobile-vr-badge">EARTHSONIC // ORBITAL EXAMINE VR</div>
+        <div class="mobile-vr-tap-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="64" height="64" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="12" width="40" height="24" rx="6" />
+            <circle cx="16" cy="24" r="5" />
+            <circle cx="32" cy="24" r="5" />
+            <path d="M21 24h6" />
+            <path d="M12 12V8a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v4" />
+          </svg>
+        </div>
+        <span class="mobile-vr-tap-title">TAP TO LOCK LANDSCAPE &amp; INSERT INTO VR HEADSET</span>
+        <span class="mobile-vr-tap-subtitle">Unlocks spatial audio · Requests gyro tracking · Locks stereo landscape</span>
+        <span class="mobile-vr-tap-subtitle">Single centre button: look at a control and click once. Clicking open space plays or pauses.</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- Feature 25: Fading Onboarding Prompt (R6: Minimal Chrome-Free VR) -->
+  <div id="vr-onboarding-prompt" class="vr-onboarding-prompt hidden" role="status" aria-live="polite">
+    <div class="vr-onboarding-content">
+      <span class="vr-onboarding-text">Earth ahead. Look at a control, then single-click to activate.</span>
+    </div>
+  </div>
+
+  <!-- Feature 26: Amber Ring Loading State (R6: Minimal Chrome-Free VR) -->
+  <div id="vr-loading-overlay" class="vr-loading-overlay hidden" role="status" aria-label="Loading VR Scene">
+    <div id="vr-loading-spinner" class="vr-loading-spinner" aria-hidden="true"></div>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

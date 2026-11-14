@@ -1,0 +1,248 @@
+{
+  "system": "EARTHSONIC Observation Catalog",
+  "version": "1.0.0",
+  "generated_at": "2026-11-03T03:10:12Z",
+  "authenticity_verification": "100% Verified NASA/NOAA Observations (0% Synthetic)",
+  "harmonized_period": {
+    "start": "1979-01",
+    "end": "2026-09",
+    "total_months": 573,
+    "variables_count": 4
+  },
+  "datasets": {
+    "global_surface_temperature": {
+      "id": "global_surface_temperature",
+      "alt_id": "nasa_giss_gistemp_v4",
+      "title": "NASA GISS Surface Temperature Analysis (GISTEMP v4)",
+      "agency": "NASA Goddard Institute for Space Studies",
+      "variable": "Land-Ocean Temperature Index (L-OTI) Anomaly",
+      "units": "\u00b0C",
+      "baseline": "1951-1980 mean",
+      "temporal_coverage": {
+        "start": "1880-01",
+        "end": "2026-09",
+        "frequency": "monthly"
+      },
+      "spatial_coverage": "Global (-90\u00b0 to +90\u00b0 latitude)",
+      "source_url": "https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv",
+      "normalization": {
+        "min": -0.85,
+        "max": 1.5,
+        "formula": "x = (T - (-0.85)) / (1.50 - (-0.85))"
+      },
+      "sonification_mapping": {
+        "audio_parameter": "pitch / frequency",
+        "musical_range": "145 Hz (D3) to 730 Hz (F#5)",
+        "neutral_point": "0.0\u00b0C -> Middle C (C4, 261.63 Hz)",
+        "rationale": "Cooling anomalies descend into calm, subdued bass; warming anomalies soar into alerting high registers."
+      }
+    },
+    "atmospheric_co2": {
+      "id": "atmospheric_co2",
+      "alt_id": "noaa_gml_mauna_loa_co2",
+      "title": "Mauna Loa Atmospheric Carbon Dioxide (Keeling Record)",
+      "agency": "NOAA Global Monitoring Laboratory / Scripps / NASA Vital Signs",
+      "variable": "Atmospheric CO2 Dry Air Mole Fraction",
+      "units": "ppm (parts per million)",
+      "baseline": "Absolute concentration",
+      "temporal_coverage": {
+        "start": "1958-03",
+        "end": "2026-09",
+        "frequency": "monthly"
+      },
+      "spatial_coverage": "Mauna Loa Observatory, Hawaii (19.536\u00b0N, 155.576\u00b0W, 3397m)",
+      "source_url": "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.csv",
+      "normalization": {
+        "min": 310.0,
+        "max": 440.0,
+        "formula": "x = (CO2 - 310.0) / (440.0 - 310.0)"
+      },
+      "sonification_mapping": {
+        "audio_parameter": "harmonic tension & carrier pitch",
+        "musical_range": "310 ppm (G3, 196 Hz) to 440 ppm (G5, 784 Hz)",
+        "neutral_point": "350 ppm (Planetary Boundary threshold)",
+        "rationale": "Climbing melodic line with harmonic saturation increasing past 350 ppm; seasonal biospheric breathing modulates amplitude."
+      }
+    },
+    "ocean_temperature": {
+      "id": "ocean_temperature",
+      "alt_id": "noaa_ncei_global_ocean_temp",
+      "title": "NOAA NCEI Global Ocean Surface Temperature Anomalies",
+      "agency": "NOAA National Centers for Environmental Information / NASA PO.DAAC",
+      "variable": "Sea Surface Temperature Anomaly",
+      "units": "\u00b0C",
+      "baseline": "1901-2000 mean (20th Century average)",
+      "temporal_coverage": {
+        "start": "1850-01",
+        "end": "2026-09",
+        "frequency": "monthly"
+      },
+      "spatial_coverage": "Global Oceans (71% of Earth's surface)",
+      "source_url": "https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/tavg/ocean/1/0/1850-2026/data.csv",
+      "normalization": {
+        "min": -0.6,
+        "max": 1.2,
+        "formula": "x = (SST - (-0.60)) / (1.20 - (-0.60))"
+      },
+      "sonification_mapping": {
+        "audio_parameter": "deep resonant sub-bass drone fundamental & low-pass filter cutoff",
+        "musical_range": "Sub-bass chord (C2=65.4 Hz, G2=98.0 Hz, C3=130.8 Hz, E3=164.8 Hz) drone; 5th-order Butterworth LPF cutoff sweeps from 80 Hz to 2400 Hz",
+        "neutral_point": "0.0\u00b0C anomaly -> 77.8 Hz drone with 600 Hz cutoff",
+        "rationale": "Translates the immense thermal inertia of Earth's oceans into deep, resonant foundational tones."
+      }
+    },
+    "sea_ice_extent": {
+      "id": "sea_ice_extent",
+      "alt_id": "nsidc_sea_ice_index_v4",
+      "title": "NOAA/NSIDC Sea Ice Index Version 4",
+      "agency": "National Snow and Ice Data Center / NOAA / NASA DAAC",
+      "variable": "Arctic Sea Ice Extent",
+      "units": "million km\u00b2",
+      "baseline": "1981-2010 median",
+      "temporal_coverage": {
+        "start": "1979-01",
+        "end": "2026-09",
+        "frequency": "monthly"
+      },
+      "spatial_coverage": "Northern Polar Hemisphere (Arctic Ocean)",
+      "source_url": "https://noaadata.apps.nsidc.org/NOAA/G02135/north/monthly/data/N_09_extent_v4.0.csv",
+      "normalization": {
+        "min": 3.5,
+        "max": 16.5,
+        "formula": "x_loss = (16.50 - Extent) / (16.50 - 3.50); x_extent = (Extent - 3.50) / (16.50 - 3.50)"
+      },
+      "sonification_mapping": {
+        "audio_parameter": "crystalline granular texture, rhythm & acoustic ice-loss decay",
+        "musical_range": "Dense glistening chimes (high extent) transitioning into sparse brittle clicks and breaking drips (low extent)",
+        "neutral_point": "6.0 million km\u00b2 (historical transition threshold)",
+        "rationale": "Sea ice functions as Earth's white acoustic shield. Its decline fragments into sparse, brittle textures."
+      }
+    }
+  },
+  "layers": {
+    "night_lights": {
+      "id": "night_lights",
+      "title": "Night Lights Change between 2012 and 2023",
+      "source_name": "Change in Night Lights between 2012 and 2023",
+      "source_url": "https://svs.gsfc.nasa.gov/5276/",
+      "svs_id": 5276,
+      "agency": "NASA Scientific Visualization Studio / Black Marble / Kel Elkins (USRA)",
+      "units": "nW/(cm^2*sr) radiance change",
+      "bounds": {
+        "lon": [
+          -180.0,
+          180.0
+        ],
+        "lat": [
+          -90.0,
+          90.0
+        ]
+      },
+      "frame_count": 2,
+      "date": "2012-2023",
+      "sha256": "3840e20bdf59ba84ce65a9d763da9a83cb1789e1c7db8e979139d8c7e6cbc0eb",
+      "texture": "/assets/layers/night_lights.jpg",
+      "column_count": 720,
+      "event_count": 0,
+      "sonification_mapping": {
+        "audio_parameter": "stereo split & octave difference shift",
+        "musical_range": "A3 (220 Hz) to A4 (440 Hz)",
+        "neutral_point": "0.0 radiance delta",
+        "rationale": "2012 lights route to the left channel while 2023 lights route to the right channel, with positive electrification anomalies triggering a one-octave leap."
+      }
+    },
+    "lightning": {
+      "id": "lightning",
+      "title": "Lightning Events Detected from the International Space Station (ISS) 2017-2023",
+      "source_name": "Lightning Events Detected from the International Space Station (ISS) 2017-2023",
+      "source_url": "https://svs.gsfc.nasa.gov/5011/",
+      "svs_id": 5011,
+      "agency": "NASA GHRC DAAC / Lightning Imaging Sensor (LIS) on ISS",
+      "units": "flash count & optical radiance",
+      "bounds": {
+        "lon": [
+          -180.0,
+          180.0
+        ],
+        "lat": [
+          -90.0,
+          90.0
+        ]
+      },
+      "frame_count": 1,
+      "date": "2017-2023",
+      "sha256": "6a55745c140bfad8ebc78b841233eaf13dc03cb439cf52c5d2dceef969ee1df7",
+      "texture": "/assets/layers/lightning.jpg",
+      "column_count": 720,
+      "event_count": 6,
+      "sonification_mapping": {
+        "audio_parameter": "percussive spatialized bursts",
+        "musical_range": "220 Hz to 880 Hz",
+        "neutral_point": "Quiet ionosphere baseline",
+        "rationale": "Detected optical lightning flashes trigger percussive audio hits with strike intensity governing velocity, latitude governing pitch, and longitude governing stereo pan."
+      }
+    },
+    "gedi_forest": {
+      "id": "gedi_forest",
+      "title": "GEDI Global Forest Canopy Height",
+      "source_name": "GEDI Forest Canopy Height",
+      "source_url": "https://svs.gsfc.nasa.gov/4950/",
+      "svs_id": 4950,
+      "agency": "NASA GEDI Mission / University of Maryland / Kel Elkins (USRA)",
+      "units": "meters (canopy height)",
+      "bounds": {
+        "lon": [
+          -180.0,
+          180.0
+        ],
+        "lat": [
+          -90.0,
+          90.0
+        ]
+      },
+      "frame_count": 1,
+      "date": "2019-2023",
+      "sha256": "e792c860275372af5a2ab2996cd9d1832c67f93ab61a23537dc9f05ec6f77217",
+      "texture": "/assets/layers/gedi_forest.jpg",
+      "column_count": 720,
+      "event_count": 0,
+      "sonification_mapping": {
+        "audio_parameter": "canopy pitch & detuned chorus",
+        "musical_range": "F3 (174.6 Hz) to F5 (698.4 Hz)",
+        "neutral_point": "0 meters canopy floor",
+        "rationale": "Column mean canopy height drives resonant fundamental chime pitch while vertical height variance expands acoustic detuning and chorus width."
+      }
+    },
+    "co2_dyamond": {
+      "id": "co2_dyamond",
+      "title": "DYAMOND Global Atmospheric Carbon Dioxide",
+      "source_name": "DYAMOND Global Carbon Dioxide for Science On A Sphere",
+      "source_url": "https://svs.gsfc.nasa.gov/5436/",
+      "svs_id": 5436,
+      "agency": "NASA GMAO / GEOS Simulation / Science On A Sphere",
+      "units": "ppm (parts per million)",
+      "bounds": {
+        "lon": [
+          -180.0,
+          180.0
+        ],
+        "lat": [
+          -90.0,
+          90.0
+        ]
+      },
+      "frame_count": 1,
+      "date": "2020-01-20 to 2020-02-28",
+      "sha256": "73da4209fd51e8f700004e3fcd5b551a5ff2e651edfc098e616e30487e15e378",
+      "texture": "/assets/layers/co2_dyamond.jpg",
+      "column_count": 720,
+      "event_count": 0,
+      "sonification_mapping": {
+        "audio_parameter": "carrier pitch & harmonic overtone brightness",
+        "musical_range": "C3 (130.8 Hz) to C5 (523.25 Hz)",
+        "neutral_point": "400 ppm baseline",
+        "rationale": "Simulated atmospheric CO2 concentration elevates carrier frequency while plume density increases overtone brightness as the sweep moves through the timeline."
+      }
+    }
+  }
+}
