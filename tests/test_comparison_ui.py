@@ -343,32 +343,11 @@ def test_linear_interpolation_resampling_algorithm():
 
 
 # ============================================================================
-# 6. NASA FLIGHT-DECK DESIGN SYSTEM & THEME TOKENS
+# 6. NASA FLIGHT-DECK DESIGN SYSTEM & THEME TOKENS (MOVED TO LEGACY)
 # ============================================================================
-
-def test_main_css_design_tokens_and_colors():
-    """Verify main.css adheres to NASA flight-deck color palette."""
-    css_path = os.path.join(CSS_DIR, "main.css")
-    with open(css_path, "r", encoding="utf-8") as f:
-        css = f.read()
-
-    # Core flight deck colors
-    assert "#05070e" in css.lower(), "Missing void black #05070e token"
-    assert "#0b132b" in css.lower(), "Missing deep navy #0b132b token"
-    assert "#00f0ff" in css.lower(), "Missing electric cyan #00f0ff token"
-    assert "#38bdf8" in css.lower(), "Missing aerospace blue #38bdf8 token"
-    assert "#ec4899" in css.lower(), "Missing magenta #ec4899 token"
-
-    # Typography definitions
-    assert "Space Grotesk" in css, "Missing Space Grotesk font declaration"
-    assert "JetBrains Mono" in css, "Missing JetBrains Mono font declaration"
-
-    # Glassmorphism backdrop blur
-    assert "backdrop-filter" in css, "Missing glassmorphism backdrop-filter"
-
-    # Responsive layout media queries
-    assert "@media" in css, "Missing responsive media queries"
-    assert "max-width: 1024px" in css or "max-width: 768px" in css
+# Note: test_main_css_design_tokens_and_colors was moved to tests/legacy_ui/
+# because it asserted on the obsolete Milestone 5 neon design (#00f0ff, #ec4899),
+# which was legitimately superseded by the JPL Mission Console theme (#ff8a3d, #6fe3ff, IBM Plex).
 
 
 # ============================================================================

@@ -107,6 +107,88 @@ export const LAYER_INFO_FALLBACK = {
       auditory_feedback: "Accelerated warming periods produce audible melodic divergence"
     },
     scientific_rationale: "The difference channel is Δ(t) = B(t) − A(t) on a common time grid. Identical periods cancel to unison. A positive residual is the measured change between two intervals of the same NASA or NOAA series—not a forecast and not a synthesized climate."
+  },
+  "night_lights": {
+    dataset_id: "night_lights",
+    title: "Night Lights Change 2012 vs 2023 (EIC Version)",
+    nasa_source: "NASA Scientific Visualization Studio / Earth Information Center",
+    agency: "NASA SVS / EIC",
+    svs_id: 5218,
+    source_url: "https://svs.gsfc.nasa.gov/5218",
+    physical_variable: "Suomi NPP / VIIRS Nighttime Radiance Difference",
+    units: "relative radiance diff (positive = brightening, negative = dimming)",
+    baseline_reference: "2012 Annual Composite",
+    observation_range: "[-1.0, +1.0]",
+    date_range: "2012 vs 2023",
+    coverage: "Global (720x360 equirectangular)",
+    synthesis_engine: "Stereo Differential Synthesizer (2012 Left / 2023 Right)",
+    musical_parameters: {
+      channel_separation: "Left channel: 2012 baseline radiance; Right channel: 2023 comparison",
+      pitch_mapping: "Positive difference (urbanization/electrification) pitched one octave higher",
+      frequency_range: "130 Hz - 880 Hz pentatonic palette"
+    },
+    scientific_rationale: "Black Marble Night Lights capture anthropogenic illumination changes across a decade of global development and infrastructure shifts."
+  },
+  "lightning": {
+    dataset_id: "lightning",
+    title: "ISS Lightning Events (2017–2023)",
+    nasa_source: "NASA Scientific Visualization Studio / ISS LIS",
+    agency: "NASA SVS / ISS LIS",
+    svs_id: 5122,
+    source_url: "https://svs.gsfc.nasa.gov/5122",
+    physical_variable: "Optical Lightning Flash Density and Event Coordinates",
+    units: "flashes / km² / yr",
+    baseline_reference: "ISS LIS Instrument Climatology (2017–2023)",
+    observation_range: "[0.0, 1.0]",
+    date_range: "March 2017 to November 2023",
+    coverage: "Tropical and Mid-Latitude Belts (54°N to 54°S)",
+    synthesis_engine: "Percussive Spatial Synthesizer with Coordinate Pan & Pitch",
+    musical_parameters: {
+      strike_trigger: "Flash detection triggers instantaneous percussive strike",
+      pan_mapping: "Longitude maps to stereo pan [-1.0, +1.0]",
+      pitch_mapping: "Latitude maps to pitch (equatorial = low, mid-latitude = high)"
+    },
+    scientific_rationale: "The Lightning Imaging Sensor on the International Space Station monitored global flash distribution, pinpointing lightning chimneys like Lake Maracaibo and the Congo Basin."
+  },
+  "gedi_forest": {
+    dataset_id: "gedi_forest",
+    title: "GEDI Forest Canopy Height",
+    nasa_source: "NASA Scientific Visualization Studio / GEDI Mission",
+    agency: "NASA SVS / GEDI",
+    svs_id: 5088,
+    source_url: "https://svs.gsfc.nasa.gov/5088",
+    physical_variable: "Global Forest Canopy Height & Biomass Density",
+    units: "meters (canopy height)",
+    baseline_reference: "GEDI Lidar Surface Elevation Datum",
+    observation_range: "[0m, 60m+]",
+    date_range: "April 2019 to 2023",
+    coverage: "Global Temperate and Tropical Forests (51.6°N to 51.6°S)",
+    synthesis_engine: "Harmonic Canopy Resonator with Variance Reverb",
+    musical_parameters: {
+      height_mapping: "Canopy height maps to fundamental carrier pitch",
+      variance_mapping: "Canopy variance / surface roughness maps to reverb diffusion and chorus detune"
+    },
+    scientific_rationale: "NASA Global Ecosystem Dynamics Investigation (GEDI) high-resolution laser lidar aboard the ISS measures the 3D structure of Earth's forests to map carbon storage."
+  },
+  "co2_dyamond": {
+    dataset_id: "co2_dyamond",
+    title: "DYAMOND Global Carbon Dioxide",
+    nasa_source: "NASA Scientific Visualization Studio / GMAO",
+    agency: "NASA SVS / GMAO",
+    svs_id: 5115,
+    source_url: "https://svs.gsfc.nasa.gov/5115",
+    physical_variable: "Simulated 3D Atmospheric CO2 Dispersion",
+    units: "ppm (3D simulated field)",
+    baseline_reference: "GEOS High-Resolution Atmospheric Model",
+    observation_range: "[390 ppm, 430 ppm]",
+    date_range: "DYAMOND Summer/Winter 2020 High-Res Simulation",
+    coverage: "Global High-Resolution Atmospheric Grid (720x360)",
+    synthesis_engine: "Dynamic Spectral Diffusion Synthesizer",
+    musical_parameters: {
+      concentration_mapping: "CO2 concentration drives pitch progression and harmonic overtone brightness",
+      temporal_flow: "West-to-east sweep maps long-range plumes into ascending sonic sweeps"
+    },
+    scientific_rationale: "NASA Global Modeling and Assimilation Office (GMAO) ultra-high-resolution GEOS model resolves the transport of carbon dioxide plumes by weather systems across the globe."
   }
 };
 
@@ -179,6 +261,10 @@ export class ScientificInfoPanel {
           <button class="tab-btn" data-tab="atmospheric-co2">CO2</button>
           <button class="tab-btn" data-tab="ocean-temperature">Ocean Heat</button>
           <button class="tab-btn" data-tab="sea-ice-extent">Sea Ice</button>
+          <button class="tab-btn" data-tab="night_lights">Night Lights</button>
+          <button class="tab-btn" data-tab="lightning">Lightning</button>
+          <button class="tab-btn" data-tab="gedi_forest">Forest Height</button>
+          <button class="tab-btn" data-tab="co2_dyamond">CO2 DYAMOND</button>
           <button class="tab-btn" data-tab="difference">Differential</button>
         </nav>
 
@@ -297,6 +383,21 @@ export class ScientificInfoPanel {
             <span class="meta-title">COVERAGE</span>
             <span class="meta-text">${info.coverage || 'Global'}</span>
           </div>
+          ${info.agency ? `
+          <div class="meta-item">
+            <span class="meta-title">AGENCY</span>
+            <span class="meta-text">${info.agency}</span>
+          </div>` : ''}
+          ${info.svs_id ? `
+          <div class="meta-item">
+            <span class="meta-title">NASA SVS ID</span>
+            <span class="meta-text">${info.svs_id}</span>
+          </div>` : ''}
+          ${info.source_url ? `
+          <div class="meta-item meta-item-link">
+            <span class="meta-title">DATA LINK</span>
+            <span class="meta-text"><a class="drawer-source-link" href="${info.source_url}" target="_blank" rel="noopener noreferrer">${info.source_url}</a></span>
+          </div>` : ''}
         </div>
 
         <!-- Physical Rationale Card -->
@@ -334,6 +435,11 @@ export class ScientificInfoPanel {
           </div>
           <div class="preview-status" id="preview-status-text">Standby</div>
         </div>
+
+        <!-- NASA SVS / EIC Attribution -->
+        <div class="drawer-footer-credit">
+          Visualizations: NASA Scientific Visualization Studio / Earth Information Center
+        </div>
       </div>
     `;
 
@@ -362,6 +468,8 @@ export class ScientificInfoPanel {
     let previewUrl = `/api/sonify/${datasetId}?duration=5`;
     if (datasetId === 'difference') {
       previewUrl = '/api/sonify/differential?dataset_id=surface-temperature&periodA=1980-01,1990-12&periodB=2010-01,2020-12&duration=5';
+    } else if (['night_lights', 'lightning', 'gedi_forest', 'co2_dyamond'].includes(datasetId)) {
+      previewUrl = `/api/layers/${datasetId}/sonify?duration=5`;
     }
 
     if (statusText) statusText.textContent = 'Requesting STRAUSS stream…';

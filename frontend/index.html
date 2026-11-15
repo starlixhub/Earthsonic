@@ -33,31 +33,24 @@
     <!-- 1. Mission rail: one row. Secondary tools live behind "More". -->
     <header class="mission-header" role="banner">
       <div class="brand">
-        <svg class="nasa-meatball" viewBox="0 0 64 64" role="img" aria-label="NASA">
-          <circle cx="32" cy="32" r="31" fill="#0B3D91"/>
-          <circle cx="32" cy="32" r="31" fill="none" stroke="#ffffff" stroke-width="1.4"/>
-          <g fill="#ffffff">
-            <circle cx="20" cy="14" r="1.05"/>
-            <circle cx="28" cy="11" r="0.85"/>
-            <circle cx="37" cy="13" r="1.05"/>
-            <circle cx="16" cy="22" r="0.75"/>
-            <circle cx="44" cy="18" r="0.9"/>
-            <circle cx="24" cy="20" r="0.7"/>
-            <circle cx="40" cy="24" r="0.7"/>
-          </g>
-          <ellipse cx="32" cy="32" rx="27" ry="10.5" fill="none" stroke="#ffffff" stroke-width="2.1" transform="rotate(-28 32 32)"/>
-          <path fill="#FC3D21" d="M7.5 38.2 L57 26.4 L57 32.2 L7.5 43.8 Z"/>
-          <text x="32" y="38.5" text-anchor="middle" fill="#ffffff" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="1.4">NASA</text>
-        </svg>
+        <img src="/assets/textures/earth_logo.png" alt="Earth" class="earth-logo" width="32" height="32">
         <div class="brand-copy">
           <h1 class="mission-title">EARTHSONIC</h1>
           <div class="mission-subtitle">The Earth Information Jukebox · Authentic NASA / NOAA observations, 1979–2026</div>
         </div>
       </div>
 
-              <div class="header-status-cluster">
-        <div id="mission-clock" class="status-badge status-badge-clock status-badge-clock-wide" title="Mission clock, coordinated universal time" tabindex="0" role="timer" aria-live="off" aria-label="Mission clock, coordinated universal time"></div>
-      </div>
+        <div class="header-status-cluster" role="group" aria-label="Flight deck telemetry and status">
+          <div class="telemetry-chip telemetry-chip-sys" title="Telemetry flight system status">
+            <span class="telemetry-chip-tag">SYS</span>
+            <span class="telemetry-chip-val"><span class="status-dot-pulse" aria-hidden="true"></span>NOMINAL</span>
+          </div>
+          <div class="telemetry-chip telemetry-chip-orbit" title="Orbital sensor telemetry">
+            <span class="telemetry-chip-tag">ORBIT</span>
+            <span id="telemetry-status">FLIGHT DECK ONLINE • 23.44° TILT</span>
+          </div>
+          <div id="mission-clock" class="status-badge status-badge-clock status-badge-clock-wide telemetry-chip telemetry-chip-clock" title="Mission clock, coordinated universal time" tabindex="0" role="timer" aria-live="off" aria-label="Mission clock, coordinated universal time"></div>
+        </div>
 
       <nav class="header-command" aria-label="Mission tools">
         <button class="header-tour-btn" id="btn-judge-tour" title="Guided mission" aria-label="Guided mission">Guided mission<span class="sr-only" style="display:none" aria-hidden="true">GUIDED MISSION (45s)</span></button>
@@ -89,7 +82,34 @@
         <div class="hud-title" id="hud-observation-subtitle" title="Surface temperature anomaly, NASA GISS GISTEMP v4, 1951–1980 baseline">Surface temperature anomaly</div>
         <div id="hud-var-value" class="hud-value">+1.28 °C</div>
         <div id="hud-var-meta" class="hud-subtext">NASA GISS GISTEMP v4 · 1951–1980 baseline</div>
+        <div class="hud-telemetry-scale" aria-hidden="true">
+          <span class="scale-label">−2.0°</span>
+          <div class="scale-track"><div class="scale-pip"></div></div>
+          <span class="scale-label">+2.0°</span>
+        </div>
       </section>
+
+      <div id="hud-matrix-card" class="hud-panel hud-matrix-card" aria-label="Live Earth Telemetry Matrix" style="display:none">
+        <div class="hud-title">Live Earth Telemetry Matrix</div>
+        <div id="telemetry-matrix-grid" class="telemetry-matrix-grid">
+          <div id="matrix-cell-temperature" class="matrix-cell" data-layer="temperature">
+            <span class="matrix-label">TEMP</span>
+            <span id="matrix-val-temperature" class="matrix-val">+1.38°C</span>
+          </div>
+          <div id="matrix-cell-co2" class="matrix-cell" data-layer="co2">
+            <span class="matrix-label">CO2</span>
+            <span id="matrix-val-co2" class="matrix-val">426.1 ppm</span>
+          </div>
+          <div id="matrix-cell-ocean" class="matrix-cell" data-layer="ocean">
+            <span class="matrix-label">OCEAN</span>
+            <span id="matrix-val-ocean" class="matrix-val">+1.10°C</span>
+          </div>
+          <div id="matrix-cell-sea_ice" class="matrix-cell" data-layer="sea_ice">
+            <span class="matrix-label">ICE</span>
+            <span id="matrix-val-sea_ice" class="matrix-val">4.81 M km²</span>
+          </div>
+        </div>
+      </div>
 
       <nav class="globe-layer-controls" aria-label="Observation layers">
         <div class="rail-label">Layer</div>
@@ -121,16 +141,27 @@
     </aside>
 
     <!-- 3. Stage: the globe, nothing pinned over it. -->
-    <main id="globe-viewport-container" class="globe-viewport" tabindex="-1">
+    <main id="globe-viewport-container" class="globe-viewport" tabindex="-1" style="background: #070709; width: 100vw; height: 100vh;">
+
+      <!-- Open MCT Telemetry Viewport HUD (non-interactive aerospace framing) -->
+      <div class="mct-viewport-hud" aria-hidden="true">
+        <div class="mct-hud-reticle mct-reticle-tl"></div>
+        <div class="mct-hud-reticle mct-reticle-tr"></div>
+        <div class="mct-hud-reticle mct-reticle-bl"></div>
+        <div class="mct-hud-reticle mct-reticle-br"></div>
+        <div class="mct-hud-header">
+          <span class="mct-hud-tag">NASA SVS / JPL</span>
+          <span class="mct-hud-title">ORBITAL OBSERVATION PLATFORM // SENSOR ARRAY</span>
+          <span class="mct-hud-status">SYS REC: 573 MO</span>
+        </div>
+        <div class="mct-hud-footer">
+          <span class="mct-hud-coord">LAT 00°00'00" · LON 000°00'00" · EPSG:4326</span>
+          <span class="mct-hud-fov">FOV: 45.0° · TILT: 23.44°</span>
+        </div>
+      </div>
 
       <div id="loading-screen" class="globe-loading-screen" role="status" aria-live="polite">
-        <svg class="nasa-meatball nasa-meatball-lg" viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="31" fill="#0B3D91"/>
-          <circle cx="32" cy="32" r="31" fill="none" stroke="#ffffff" stroke-width="1.4"/>
-          <ellipse cx="32" cy="32" rx="27" ry="10.5" fill="none" stroke="#ffffff" stroke-width="2.1" transform="rotate(-28 32 32)"/>
-          <path fill="#FC3D21" d="M7.5 38.2 L57 26.4 L57 32.2 L7.5 43.8 Z"/>
-          <text x="32" y="38.5" text-anchor="middle" fill="#ffffff" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="1.4">NASA</text>
-        </svg>
+        <img src="/assets/textures/earth_logo.png" alt="Earth" class="earth-logo earth-logo-lg" width="72" height="72">
         <div class="globe-spinner" aria-hidden="true"></div>
         <div class="globe-loading-text">Loading NASA Earth observations</div>
         <div class="globe-loading-sub">GISTEMP v4 · Mauna Loa CO₂ · NOAA ocean heat · NSIDC sea ice</div>
@@ -140,7 +171,32 @@
 
     <!-- 4. Right rail: the four measured variables, as a sonification deck to mute / solo / level. -->
     <aside class="frame-rail frame-rail-right" aria-label="Sonification channels">
-      <div class="orchestra-channels-grid">
+      <!-- Observation Mode Toggle (Climate time series vs Satellite layers) -->
+      <div class="rail-mode-toggle" role="group" aria-label="Observation mode">
+        <button type="button" class="mode-toggle-btn active" id="btn-mode-climate" data-mode="climate" aria-pressed="true">Climate time series</button>
+        <button type="button" class="mode-toggle-btn" id="btn-mode-layers" data-mode="layers" aria-pressed="false">Satellite layers</button>
+      </div>
+
+      <!-- Segmented Satellite Layer Picker & A/B Wipe Controls -->
+      <div class="satellite-layer-picker hidden" id="satellite-layer-picker" role="radiogroup" aria-label="Satellite visual layers">
+        <div class="rail-label">NASA SVS / EIC Visuals</div>
+        <div class="satellite-picker-buttons">
+          <button type="button" class="sat-layer-btn active" id="sat-btn-night_lights" data-layer="night_lights" aria-pressed="true">Night Lights</button>
+          <button type="button" class="sat-layer-btn" id="sat-btn-lightning" data-layer="lightning" aria-pressed="false">Lightning</button>
+          <button type="button" class="sat-layer-btn" id="sat-btn-gedi_forest" data-layer="gedi_forest" aria-pressed="false">Forest Height</button>
+          <button type="button" class="sat-layer-btn" id="sat-btn-co2_dyamond" data-layer="co2_dyamond" aria-pressed="false">CO2 DYAMOND</button>
+        </div>
+        <div class="sat-ab-slider-row" id="night-lights-ab-container">
+          <div class="ab-slider-labels">
+            <span class="ab-label-a">2012</span>
+            <span class="ab-slider-title">A/B Frame Wipe</span>
+            <span class="ab-label-b">2023</span>
+          </div>
+          <input type="range" class="ab-slider" id="night-lights-ab-slider" min="0" max="1" step="0.01" value="0.5" aria-label="Night lights 2012 vs 2023 frame blend">
+        </div>
+      </div>
+
+      <div class="orchestra-channels-grid" id="orchestra-channels-grid">
         <div class="channel-strip" id="strip-surface_temperature" data-track="surface_temperature" style="--strip-hue: 10;">
           <div class="strip-header">
             <div class="strip-row-top">
@@ -319,7 +375,7 @@
       <div class="vr-modal-body">
         <div class="vr-modal-telemetry-banner">
           <span class="telemetry-dot" aria-hidden="true"></span>
-          <span class="telemetry-text">LOCAL WI-FI BRIDGE ONLINE · WEBAUDIO HRTF &amp; GYRO GLIDER READY</span>
+          <span class="telemetry-text">WEBXR CLOUD BRIDGE ACTIVE · SPATIAL AUDIO &amp; GYRO GLIDER READY</span>
         </div>
 
         <div class="vr-qr-stage">
@@ -333,10 +389,9 @@
           <div class="vr-instructions">
             <h3 class="vr-instructions-heading">PHONE VR HEADSET LAUNCH:</h3>
             <ol class="vr-steps-list">
-              <li>Connect your smartphone to the <strong>same Wi-Fi network</strong> as this PC.</li>
-              <li>Open your phone's <strong>Camera</strong> or QR scanner app and point it at the code.</li>
-              <li>Tap <strong>[ TAP TO LOCK LANDSCAPE &amp; INSERT INTO VR HEADSET ]</strong> to unlock spatial audio and fullscreen stereo.</li>
-              <li>Slide phone into Google Cardboard, Daydream, or mobile VR enclosure.</li>
+              <li>Scan this QR code with your mobile phone camera or WebXR browser.</li>
+              <li>Tap <strong>[ TAP TO LOCK LANDSCAPE &amp; INSERT INTO VR HEADSET ]</strong> to unlock spatial audio and stereo view.</li>
+              <li>Slide phone into Google Cardboard or mobile VR headset.</li>
             </ol>
           </div>
         </div>
@@ -344,7 +399,7 @@
         <div class="vr-url-bar">
           <label for="vr-url-input" class="vr-url-label">Direct mobile URL:</label>
           <div class="vr-url-input-group">
-            <input type="text" id="vr-url-input" class="vr-url-input" readonly value="http://localhost:5000/?vr=1" spellcheck="false" aria-label="Direct mobile VR launch URL">
+            <input type="text" id="vr-url-input" class="vr-url-input" readonly value="" placeholder="Generating launch link..." spellcheck="false" aria-label="Direct mobile VR launch URL">
             <button type="button" id="btn-copy-vr-link" class="vr-copy-btn" title="Copy URL to clipboard">
               <span id="btn-copy-vr-link-text">COPY LINK</span>
             </button>

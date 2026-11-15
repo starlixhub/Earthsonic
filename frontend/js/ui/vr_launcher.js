@@ -157,10 +157,14 @@ export class VRLauncher {
         console.warn('[VRLauncher] /api/vr-launch-info unavailable, using local origin fallback:', err.message);
       }
 
-      // Fallback to current browser origin
-      if (!launchUrl) {
-        const origin = window.location.origin || `${window.location.protocol}//${window.location.host}`;
-        launchUrl = `${origin}/?vr=1`;
+      // Fallback: When hosted on Railway or when running locally, avoid exposing localhost to mobile QR scanner
+      if (!launchUrl || launchUrl.includes('localhost') || launchUrl.includes('127.0.0.1')) {
+        const host = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname.toLowerCase() : '';
+        if (host && host !== 'localhost' && host !== '127.0.0.1' && host !== '0.0.0.0') {
+          launchUrl = `${window.location.origin}/?vr=1`;
+        } else {
+          launchUrl = 'https://earthsonic.up.railway.app/?vr=1';
+        }
         this.cachedLaunchUrl = launchUrl;
       }
 
@@ -224,16 +228,22 @@ export class VRLauncher {
   }
 
   async handleMobileTap() {
+    // Hide mobile launcher overlay immediately
+    if (this.elements.mobileLauncher) {
+      this.elements.mobileLauncher.classList.add('hidden');
+      this.elements.mobileLauncher.style.display = 'none';
+    }
+
     // 1. Resume AudioContext
     try {
       if (this.app && this.app.mixer && this.app.mixer.ctx) {
         if (this.app.mixer.ctx.state === 'suspended') {
-          await this.app.mixer.ctx.resume();
+          this.app.mixer.ctx.resume().catch(() => {});
         }
       } else if (window.AudioContext || window.webkitAudioContext) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!window._sharedAudioCtx) window._sharedAudioCtx = new AudioCtx();
-        if (window._sharedAudioCtx.state === 'suspended') await window._sharedAudioCtx.resume();
+        if (window._sharedAudioCtx.state === 'suspended') window._sharedAudioCtx.resume().catch(() => {});
       }
     } catch (e) {
       console.warn('[VRLauncher] AudioContext unlock notice:', e);
@@ -243,7 +253,7 @@ export class VRLauncher {
     try {
       if (typeof DeviceOrientationEvent !== 'undefined' &&
           typeof DeviceOrientationEvent.requestPermission === 'function') {
-        await DeviceOrientationEvent.requestPermission();
+        DeviceOrientationEvent.requestPermission().catch(() => {});
       }
     } catch (e) {
       console.warn('[VRLauncher] DeviceOrientation permission notice:', e);
@@ -253,9 +263,9 @@ export class VRLauncher {
     try {
       const docEl = document.documentElement;
       if (docEl.requestFullscreen) {
-        await docEl.requestFullscreen().catch(() => {});
+        docEl.requestFullscreen().catch(() => {});
       } else if (docEl.webkitRequestFullscreen) {
-        await docEl.webkitRequestFullscreen();
+        docEl.webkitRequestFullscreen();
       }
     } catch (e) {
       console.warn('[VRLauncher] Fullscreen request notice:', e);
@@ -264,25 +274,22 @@ export class VRLauncher {
     // 4. Orientation Lock
     try {
       if (screen.orientation && typeof screen.orientation.lock === 'function') {
-        await screen.orientation.lock('landscape').catch(() => {});
+        screen.orientation.lock('landscape').catch(() => {});
       }
     } catch (e) {
       console.warn('[VRLauncher] Screen orientation lock notice:', e);
     }
 
-    // 5. Hide mobile launcher overlay (button does not persist)
-    if (this.elements.mobileLauncher) {
-      this.elements.mobileLauncher.classList.add('hidden');
-      this.elements.mobileLauncher.style.display = 'none';
-    }
-
-    // 6. Ensure live audio stems are playing
+    // 5. Ensure live audio stems are playing (async background)
     if (this.app && this.app.mixer && !this.app.mixer.isPlaying) {
       try {
         if (typeof this.app.loadAudioStemsIfNeeded === 'function') {
-          await this.app.loadAudioStemsIfNeeded();
-        }
-        if (typeof this.app.mixer.play === 'function') {
+          this.app.loadAudioStemsIfNeeded().then(() => {
+            if (this.app && this.app.mixer && typeof this.app.mixer.play === 'function') {
+              this.app.mixer.play();
+            }
+          }).catch(() => {});
+        } else if (typeof this.app.mixer.play === 'function') {
           this.app.mixer.play();
         }
       } catch (e) {
@@ -290,11 +297,21 @@ export class VRLauncher {
       }
     }
 
-    // 7. Transition into VR
-    this.enterLocalVR('auto');
+    // 6. Transition into VR
+    this.enterLocalVR('stereo');
   }
 
   enterLocalVR(mode = 'auto') {
+    const launcher = document.getElementById('mobile-vr-launcher');
+    if (launcher) {
+      launcher.classList.add('hidden');
+      launcher.style.display = 'none';
+    }
+    const modal = document.getElementById('vr-desktop-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
     // Prefer Orbital Examine (M5) if available, fall back to legacy Terminator Skim
     const orbVR = window.earthsonicOrbitalVR;
     const legacyVR = window.earthsonicVR;

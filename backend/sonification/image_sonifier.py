@@ -364,6 +364,9 @@ class LayerAudioSynthesizer:
         """
         Synthesizes a 44.1 kHz 16-bit PCM stereo WAV stream.
         """
+        if not columns:
+            raise ValueError("Columns list cannot be empty")
+
         sr = sample_rate or self.sample_rate
         duration = max(1.0, min(60.0, float(duration)))
         num_samples = int(duration * sr)

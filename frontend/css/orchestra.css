@@ -12,8 +12,8 @@
   left: 0;
   right: 0;
   background: var(--orchestra-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-top: 1px solid var(--orchestra-border);
   padding: 0.55rem 1.25rem 0.7rem;
   display: flex;
@@ -519,7 +519,7 @@
   border: none;
   border-radius: 0;
   padding: 0;
-  font-family: 'JetBrains Mono', var(--font-mono, monospace);
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
@@ -650,7 +650,7 @@
   width: 6px;
   height: 14px;
   border-radius: 1px;
-  background: var(--paper);
+  background: #f4f4f5;
   cursor: pointer;
   margin-top: -5px;
   border: 1px solid var(--scrim-40);
@@ -659,7 +659,7 @@
 
 .strip-vol-slider::-moz-range-track {
   height: 4px;
-  background: var(--track);
+  background: #18181b;
   border-radius: 2px;
   border: 1px solid var(--wh-08);
 }
@@ -668,7 +668,7 @@
   width: 6px;
   height: 14px;
   border-radius: 1px;
-  background: var(--paper);
+  background: #f4f4f5;
   cursor: pointer;
   border: 1px solid var(--scrim-40);
   box-shadow: none;

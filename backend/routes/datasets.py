@@ -114,11 +114,26 @@ def health_check():
 
     all_present = all([meta is not None, harm is not None, zonal is not None])
 
+    # Check NASA SVS/EIC layer readiness across all 4 layers
+    processed_dir = current_app.config.get("PROCESSED_DATA_DIR")
+    if not processed_dir:
+        base_dir = current_app.config.get("BASE_DIR", os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        processed_dir = os.path.join(base_dir, "data", "processed")
+    layers_dir = os.path.join(processed_dir, "layers")
+    required_layers = ["night_lights", "lightning", "gedi_forest", "co2_dyamond"]
+    layers_ready = bool(
+        os.path.isdir(layers_dir) and all(
+            os.path.exists(os.path.join(layers_dir, f"{lid}.json"))
+            for lid in required_layers
+        )
+    )
+
     return jsonify({
         "status": "healthy" if all_present else "degraded",
         "service": "EARTHSONIC Dataset API",
         "authenticity_verification": "100% Authentic NASA/NOAA Observations (0% Synthetic)",
         "datasets_ready": all_present,
+        "layers_ready": layers_ready,
         "total_harmonized_months": len(harm["months"]) if harm else 0,
         "harmonized_period": harm["period"] if harm else None,
     }), 200 if all_present else 503
@@ -313,6 +328,7 @@ def get_harmonized_timeseries():
             "end": end_date,
             "total_months": len(months),
         },
+        "total_months": len(months),
         "months": months,
         "temperature_anomaly": temps,
         "co2_ppm": co2s,

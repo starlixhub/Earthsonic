@@ -18,6 +18,18 @@ from backend.config import Config  # noqa: E402
 from backend.routes.datasets import datasets_bp  # noqa: E402
 from backend.routes.sonification import sonification_bp  # noqa: E402
 from backend.routes.comparison import comparison_bp  # noqa: E402
+from backend.routes.layers import layers_bp  # noqa: E402
+
+
+def is_production():
+    """Detect whether app is running in production, including Railway deployment."""
+    return bool(
+        os.environ.get("DEPLOY_ENV", "").lower() == "production"
+        or os.environ.get("RAILWAY_ENVIRONMENT_NAME")
+        or os.environ.get("RAILWAY_ENVIRONMENT")
+        or os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+        or os.environ.get("PUBLIC_URL")
+    )
 
 
 def get_primary_lan_ip():
@@ -55,6 +67,7 @@ def create_app(config_class=Config):
     app.register_blueprint(datasets_bp)
     app.register_blueprint(sonification_bp)
     app.register_blueprint(comparison_bp)
+    app.register_blueprint(layers_bp)
 
     # Enable CORS headers for all responses
     @app.after_request
@@ -84,9 +97,29 @@ def create_app(config_class=Config):
     @app.route("/api/vr-launch-info", methods=["GET"])
     def vr_launch_info():
         """
-        Return the mobile VR launch URL with the host machine's primary LAN IP
-        so mobile devices on the same Wi-Fi network can connect directly.
+        Return the mobile VR launch URL.
+        When running in production or on Railway (or when PUBLIC_URL is configured),
+        returns the public HTTPS URL so mobile QR scanning connects immediately.
+        When DEPLOY_ENV is unset or development, uses host machine's primary LAN IP.
         """
+        public_domain = (
+            os.environ.get("PUBLIC_URL")
+            or os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+            or os.environ.get("RAILWAY_STATIC_URL")
+        )
+        if public_domain:
+            domain = public_domain.strip().rstrip("/")
+            if not domain.startswith("http://") and not domain.startswith("https://"):
+                domain = f"https://{domain}"
+            return jsonify({"vr_url": f"{domain}/?vr=1"}), 200
+
+        if is_production():
+            public_host = request.headers.get("X-Forwarded-Host") or request.host
+            if public_host and not any(h in public_host for h in ("localhost", "127.0.0.1", "0.0.0.0")):
+                proto = request.headers.get("X-Forwarded-Proto") or ("https" if request.is_secure else "https")
+                return jsonify({"vr_url": f"{proto}://{public_host}/?vr=1"}), 200
+            return jsonify({"vr_url": "https://earthsonic.up.railway.app/?vr=1"}), 200
+
         lan_ip = get_primary_lan_ip()
         host_header = request.host or ""
         if ":" in host_header:
@@ -124,6 +157,11 @@ def create_app(config_class=Config):
                 "/api/comparison",
                 "/api/sonification/explanations",
                 "/api/vr-launch-info"
+            ],
+            "layer_endpoints": [
+                "/api/layers",
+                "/api/layers/<layer_id>",
+                "/api/layers/<layer_id>/sonify"
             ]
         }), 200
 
@@ -138,6 +176,18 @@ def create_app(config_class=Config):
             "api_docs": "/api",
             "health": "/api/health"
         }), 200
+
+    @app.route("/landing/")
+    @app.route("/landing/<path:filename>")
+    def landing(filename="index.html"):
+        landing_dir = os.path.join(PROJECT_ROOT, "landing")
+        if not filename or filename.endswith("/"):
+            filename = "index.html"
+        return send_from_directory(landing_dir, filename)
+
+    @app.route("/frontend/<path:filename>")
+    def frontend_static_assets(filename):
+        return send_from_directory(os.path.join(PROJECT_ROOT, "frontend"), filename)
 
     # ------------------------------------------------------------------------
     # DEV-ONLY visual-verification capture sink (opt-in via env var). Never

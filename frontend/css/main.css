@@ -24,7 +24,7 @@ html, body {
   overflow: hidden;
   background-color: var(--color-void);
   color: var(--color-text);
-  font-family: var(--font-body);
+  font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.01em;
 }
@@ -83,8 +83,8 @@ header.mission-header {
   left: 0;
   right: 0;
   background: var(--panel);
-  backdrop-filter: var(--backdrop-blur);
-  -webkit-backdrop-filter: var(--backdrop-blur);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-bottom: 1px solid var(--color-border);
   padding: 0;
   display: flex;
@@ -869,7 +869,7 @@ header.mission-header {
   width: 100%;
   height: 100%;
   background: var(--scrim-55);
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
   pointer-events: auto;
 }
 
@@ -881,7 +881,7 @@ header.mission-header {
   max-width: 92vw;
   height: 100vh;
   background: var(--panel);
-  backdrop-filter: var(--backdrop-blur);
+  backdrop-filter: none;
   border-left: 1px solid var(--color-border);
   box-shadow: none;
   display: flex;
@@ -1325,7 +1325,8 @@ input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  background: linear-gradient(to right, var(--fill-color, var(--signal)) 0%, var(--fill-color, var(--signal)) var(--fill-pct, 50%), var(--track) var(--fill-pct, 50%), var(--track) 100%);
+  background: #18181b;
+  background: linear-gradient(to right, var(--fill-color, var(--signal)) 0%, var(--fill-color, var(--signal)) var(--fill-pct, 50%), var(--track, #18181b) var(--fill-pct, 50%), var(--track, #18181b) 100%);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -1344,7 +1345,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 6px;
   height: 14px;
   border-radius: 1px;
-  background: var(--paper);
+  background: #f4f4f5;
   cursor: pointer;
   margin-top: -5px;
   border: 1px solid var(--scrim-40);
@@ -1353,7 +1354,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]::-moz-range-track {
   height: 4px;
-  background: var(--track);
+  background: #18181b;
   border-radius: 2px;
   border: 1px solid var(--wh-08);
 }
@@ -1362,24 +1363,46 @@ input[type="range"]::-moz-range-thumb {
   width: 6px;
   height: 14px;
   border-radius: 1px;
-  background: var(--paper);
+  background: #f4f4f5;
   cursor: pointer;
   border: 1px solid var(--scrim-40);
   box-shadow: none;
 }
 
 /* Layer-specific slider fill colors */
-.channel-strip[data-track="surface_temperature"] .strip-vol-slider {
-  --fill-color: var(--c-temp);
+.channel-strip[data-track="surface_temperature"] .strip-vol-slider,
+[data-track="surface_temperature"] {
+  --fill-color: #fc3d21;
 }
-.channel-strip[data-track="atmospheric_co2"] .strip-vol-slider {
-  --fill-color: var(--c-co2);
+.channel-strip[data-track="atmospheric_co2"] .strip-vol-slider,
+[data-track="atmospheric_co2"] {
+  --fill-color: #f59e0b;
 }
-.channel-strip[data-track="ocean_temperature"] .strip-vol-slider {
-  --fill-color: var(--c-ocean);
+.channel-strip[data-track="ocean_temperature"] .strip-vol-slider,
+[data-track="ocean_temperature"] {
+  --fill-color: #0ea5e9;
 }
-.channel-strip[data-track="sea_ice_extent"] .strip-vol-slider {
-  --fill-color: var(--c-ice);
+.channel-strip[data-track="sea_ice_extent"] .strip-vol-slider,
+[data-track="sea_ice_extent"] {
+  --fill-color: #38bdf8;
+}
+
+/* Telemetry Matrix active layer highlights */
+.matrix-cell.active[data-layer="temperature"] {
+  border-left-color: #fc3d21;
+  color: #fc3d21;
+}
+.matrix-cell.active[data-layer="co2"] {
+  border-left-color: #f59e0b;
+  color: #f59e0b;
+}
+.matrix-cell.active[data-layer="ocean"] {
+  border-left-color: #0ea5e9;
+  color: #0ea5e9;
+}
+.matrix-cell.active[data-layer="sea_ice"] {
+  border-left-color: #38bdf8;
+  color: #38bdf8;
 }
 .transport-seek-slider {
   --fill-color: var(--signal);
@@ -1483,8 +1506,8 @@ input[type="range"]::-moz-range-thumb {
   max-width: 640px;
   background: var(--panel);
   border: 1px solid var(--color-border);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-radius: 0;
   box-shadow: none;
   z-index: 100;
@@ -1794,8 +1817,8 @@ body.vr-mode-active .vr-onboarding-prompt {
   border: 1px solid var(--hairline);
   padding: 0.65rem 1.4rem;
   border-radius: 0;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: none;
   display: inline-flex;
   align-items: center;

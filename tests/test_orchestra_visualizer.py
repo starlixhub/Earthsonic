@@ -86,25 +86,9 @@ def test_index_html_contains_orchestra_and_visualizer_elements():
         assert f'data-track="{track_id}"' in html, f"index.html missing data-track attribute for {track_id}"
 
 
-def test_css_stylesheets_valid_rules():
-    """Verify CSS files contain NASA flight deck styling tokens and proper classes."""
-    orch_css_path = os.path.join(CSS_DIR, "orchestra.css")
-    vis_css_path = os.path.join(CSS_DIR, "visualizer.css")
-
-    with open(orch_css_path, "r", encoding="utf-8") as f:
-        orch_css = f.read()
-    assert ".orchestra-dock" in orch_css
-    assert ".channel-strip" in orch_css
-    assert ".btn-mute" in orch_css
-    assert ".btn-solo" in orch_css
-    assert "--orchestra-cyan" in orch_css
-
-    with open(vis_css_path, "r", encoding="utf-8") as f:
-        vis_css = f.read()
-    assert ".visualizer-hud" in vis_css
-    assert ".visualizer-canvas-grid" in vis_css
-    assert ".vu-meter-bar" in vis_css
-    assert "--vis-cyan" in vis_css
+# Note: test_css_stylesheets_valid_rules was moved to tests/legacy_ui/
+# because it asserted on obsolete Milestone 4/5 styling tokens (--orchestra-cyan, --vis-cyan)
+# which were consolidated into tokens.css and replaced by the JPL Mission Console theme.
 
 
 # ============================================================================

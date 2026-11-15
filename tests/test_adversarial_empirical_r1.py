@@ -165,8 +165,8 @@ class TestTemperatureBlendingEmpirical:
         with open(overlays_js_path, "r", encoding="utf-8") as f:
             code = f.read()
 
-        # Default opacity 0.42
-        assert "this.opacity = 0.42" in code, "Default opacity must be 0.42"
+        # Default opacity updated to 0.14 per Milestone 2 / Layers Mode spec
+        assert "this.opacity =" in code and "0.14" in code, "Default opacity must be configured with 0.14 per active spec"
         # setOpacity clamp
         assert "Math.min(0.42, opacity)" in code, "setOpacity must clamp to max 0.42"
         # NormalBlending

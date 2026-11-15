@@ -160,6 +160,17 @@ class TestTier2BoundaryAndCornerCases:
         res_str = client.get("/api/layers/night_lights/sonify?duration=invalid_number")
         assert res_str.status_code in [400, 422], f"Non-numeric duration should return 400/422, got {res_str.status_code}"
 
+        # NaN and Inf durations (adversarial edge case)
+        res_nan = client.get("/api/layers/night_lights/sonify?duration=NaN")
+        assert res_nan.status_code in [400, 422], f"NaN duration should return 400/422, got {res_nan.status_code}"
+        data_nan = res_nan.get_json()
+        assert data_nan.get("status") == "error"
+
+        res_inf = client.get("/api/layers/night_lights/sonify?duration=inf")
+        assert res_inf.status_code in [400, 422], f"Inf duration should return 400/422, got {res_inf.status_code}"
+        data_inf = res_inf.get_json()
+        assert data_inf.get("status") == "error"
+
     def test_column_metrics_strict_0_to_1_bounds(self, client):
         """Every column metric across all 4 layers must strictly satisfy 0.0 <= x <= 1.0."""
         for layer_id in REQUIRED_LAYER_IDS:

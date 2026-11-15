@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EarthSonic — NASA Space Apps Challenge 2026</title>
+  <meta name="description" content="EarthSonic sonifies 47 years of NASA and NOAA planetary climate observations into multi-track acoustic compositions and interactive 3D WebXR experiences.">
+  <meta name="earthsonic-public-url" content="https://earthsonic.up.railway.app">
+  
+  <!-- Google Fonts: Space Grotesk, IBM Plex Mono & IBM Plex Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Core Libraries: Three.js and GSAP with ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+</head>
+<body>
+  <!-- Accessible Skip Navigation Link -->
+  <a href="#explore" class="skip-link">Skip to content</a>
+
+  <!-- Fixed Top Navigation Bar -->
+  <header>
+    <nav id="top-nav" class="top-nav" aria-label="Main Navigation">
+      <div class="nav-container">
+        <div class="nav-brand" id="nav-brand">
+          <a href="#hero" class="brand-link" id="nav-brand-link">
+            <span class="brand-text" id="nav-brand-text">EARTHSONIC</span>
+          </a>
+        </div>
+        <div class="nav-links" id="desktop-nav-links">
+          <a href="/" class="nav-link">Console</a>
+          <a href="#explore" class="nav-link" id="nav-link-vr">VR Mode</a>
+          <a href="#about" class="nav-link">About</a>
+          <a href="#team" class="nav-link">Contact</a>
+        </div>
+        <button type="button" class="hamburger-btn" id="btn-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-nav-panel">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+
+      <!-- Mobile Navigation Drawer Panel -->
+      <div class="mobile-nav-panel" id="mobile-nav-panel" hidden>
+        <a href="/" class="mobile-nav-link">Console</a>
+        <a href="#explore" class="mobile-nav-link" id="mobile-link-vr">VR Mode</a>
+        <a href="#about" class="mobile-nav-link">About</a>
+        <a href="#team" class="mobile-nav-link">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <!-- Hero Section: Full-Viewport 3D Earth Showcase -->
+    <section id="hero" class="hero-section" aria-label="Hero Section">
+      <div id="hero-starfield" class="hero-starfield" aria-hidden="true"></div>
+      <div id="hero-globe-halo" class="hero-globe-halo" aria-hidden="true"></div>
+      <div id="globe-container" class="globe-container" aria-label="Interactive 3D Earth Globe">
+        <canvas id="globe-canvas"></canvas>
+      </div>
+      <div id="hero-wordmark" class="hero-wordmark">
+        <h1 class="wordmark-text">EARTHSONIC</h1>
+        <p class="hero-tagline">PLANETARY CLIMATE SONIFICATION &middot; 1979–2026</p>
+      </div>
+    </section>
+
+    <!-- Explore Section: Mission Console and VR Entry Points -->
+    <section id="explore" class="explore-section" aria-label="Explore the Jukebox">
+      <div class="content-wrap">
+        <h2 class="section-title">Explore the Jukebox</h2>
+        <p class="explore-lead">
+          Experience 47 years of planetary climate observations transformed into multi-track acoustic sonification. Launch the interactive mission console dashboard to audition real-time climate data streams, or enter orbital VR mode to immerse yourself in dual-hemisphere spatialized audio.
+        </p>
+        <div class="explore-actions">
+          <a href="/" class="btn-flat-outline">Launch Mission Console</a>
+          <button type="button" id="btn-open-vr-modal" class="btn-flat-outline">Enter VR Mode</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section: Scientific Narrative & 4 Climate Data Channels -->
+    <section id="about" class="about-section" aria-label="About EarthSonic">
+      <div class="content-wrap">
+        <div class="reading-measure">
+          <h2 class="section-title">About EarthSonic</h2>
+          <p class="section-subtitle">NASA Space Apps Challenge 2026 &middot; Sonifying 47 Years of Earth Observation</p>
+          
+          <div class="about-prose">
+            <p>
+              EarthSonic bridges planetary science and acoustic perception by transforming 47 years of continuous observations from NASA and NOAA satellite instruments into multi-layered musical arrangements. By translating continuous empirical records into calibrated audio frequencies, listeners intuitively perceive planetary shifts across half a century of Earth system telemetry.
+            </p>
+
+            <h3 class="channel-heading">The Four Primary Data Channels</h3>
+            <ul class="channel-list">
+              <li class="channel-item">
+                <strong class="channel-name">NASA GISTEMP v4:</strong>
+                Global surface temperature anomaly records (1880–2026, calibrated against the 1951–1980 climatological baseline) drive the primary melodic synthesizer voice. Positive thermal excursions modulate upward pitch inflections and drive dynamic atmospheric day/night terminator displacement across the 3D globe.
+              </li>
+              <li class="channel-item">
+                <strong class="channel-name">Mauna Loa Observatory:</strong>
+                Continuous atmospheric carbon dioxide mole-fraction measurements from the Keeling Record (336 to 426+ ppm) govern harmonic overtone saturation, atmospheric scattering haze, and resonant chorus depth, reflecting the relentless accumulation of greenhouse forcing.
+              </li>
+              <li class="channel-item">
+                <strong class="channel-name">NOAA NCEI Ocean Heat Content:</strong>
+                Global ocean heat content in the 0–2000m layer represents over 90% of excess Earth system energy. This volumetric thermal surge drives a deep resonant sub-bass drone and controls a dynamic low-pass acoustic filter coupled with ocean specular glint shaders.
+              </li>
+              <li class="channel-item">
+                <strong class="channel-name">NSIDC Sea Ice Extent:</strong>
+                Continuous satellite passive microwave observations of polar cryosphere extent from 1979 through 2026 are translated into high-frequency crystalline percussive textures and modulate polar ice cap surface albedo and surface bump shaders.
+              </li>
+            </ul>
+
+            <p>
+              Algorithmic audio synthesis is powered by the STRAUSS (Sonification Tools and Resources for Astronomers Using Sound Synthesis) framework. Multi-decadal climate time series are synthesized into synchronized audio stems with strictly deterministic mathematical mappings, ensuring every sonic event reflects verified scientific observations without synthetic embellishment.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team / Contact Section: High-Contrast White Band & Contributor Profiles -->
+    <section id="team" class="team-section" aria-label="Contact Us">
+      <div class="content-wrap">
+        <h2 class="section-title team-title">Contact Us</h2>
+        <p class="section-subtitle team-subtitle">NASA Space Apps Challenge 2026 Project Contributors</p>
+
+        <div class="team-grid team-grid-single">
+          <!-- Project Creator & Lead -->
+          <article class="team-card">
+            <div class="card-avatar" aria-hidden="true">
+              <img src="profile.png" alt="Atharv Ugale Profile Picture" class="avatar-img" width="64" height="64" />
+            </div>
+            <div class="card-body">
+              <h3 class="card-name">Atharv Ugale</h3>
+              <p class="card-role">Creator &amp; Lead Systems Developer &middot; EarthSonic</p>
+              <div class="card-socials">
+                <a href="mailto:ugaleatharv9@gmail.com" class="team-icon-link" aria-label="Email Atharv Ugale">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                  </svg>
+                </a>
+                <a href="https://www.linkedin.com/in/atharv-ugale-6b455435b?utm_source=share_via&amp;utm_content=profile&amp;utm_medium=member_android" class="team-icon-link" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile of Atharv Ugale">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                    <rect x="2" y="9" width="4" height="12"></rect>
+                    <circle cx="4" cy="4" r="2"></circle>
+                  </svg>
+                </a>
+                <a href="https://github.com/starlixhub" class="team-icon-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile of Atharv Ugale">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer: Exact Reference List Format, GitHub Icon Link & Copyright -->
+    <footer id="footer" class="footer-section" aria-label="Credits and Attribution">
+      <div class="content-wrap">
+        <ul class="credit-list">
+          <li class="credit-item">Surface temperature anomaly datasets provided by <a href="https://data.giss.nasa.gov/gistemp/" target="_blank" rel="noopener noreferrer">NASA GISTEMP v4</a>.</li>
+          <li class="credit-item">Atmospheric carbon dioxide mole fraction records provided by <a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener noreferrer">Mauna Loa Observatory</a>.</li>
+          <li class="credit-item">Global ocean heat content 0–2000m anomaly data provided by <a href="https://www.ncei.noaa.gov/" target="_blank" rel="noopener noreferrer">NOAA NCEI</a>.</li>
+          <li class="credit-item">Daily and monthly polar sea ice indices provided by <a href="https://nsidc.org/data/seaice_index" target="_blank" rel="noopener noreferrer">NSIDC Sea Ice Index</a>.</li>
+          <li class="credit-item">Daytime global surface satellite composite courtesy of <a href="https://visibleearth.nasa.gov/collection/1484/blue-marble" target="_blank" rel="noopener noreferrer">NASA Blue Marble</a>.</li>
+          <li class="credit-item">Nighttime city lights and nocturnal emissions courtesy of <a href="https://blackmarble.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer">NASA Black Marble (VIIRS)</a>.</li>
+          <li class="credit-item">Cloud optical properties and atmospheric layers courtesy of <a href="https://modis.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer">MODIS</a>.</li>
+          <li class="credit-item">Global bathymetric terrain and ocean floor relief provided by <a href="https://www.gebco.net/" target="_blank" rel="noopener noreferrer">GEBCO</a>.</li>
+          <li class="credit-item">Deep sky astrometric star coordinates and brightness provided by <a href="https://svs.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer">Gaia/Hipparcos starfield</a>.</li>
+          <li class="credit-item">Algorithmic audio synthesis and data-to-sound translation powered by <a href="https://github.com/james-trayford/strauss" target="_blank" rel="noopener noreferrer">STRAUSS</a>.</li>
+        </ul>
+
+        <div class="footer-meta">
+          <a href="https://github.com/starlixhub/Earthsonic" target="_blank" rel="noopener noreferrer" class="footer-github-link" aria-label="EarthSonic GitHub Repository">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+          </a>
+          <p class="footer-copyright">&copy; 2026 EarthSonic Team &middot; NASA Space Apps Challenge 2026. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Desktop VR QR Modal Dialog -->
+  <div id="vr-modal" class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="vr-modal-title" hidden>
+    <div class="modal-backdrop" id="vr-modal-backdrop" aria-hidden="true"></div>
+    <div class="modal-surface">
+      <div class="modal-header">
+        <h3 id="vr-modal-title" class="modal-title">Enter VR Mode &middot; Mobile Pair</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-vr-modal" aria-label="Close VR modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="qr-canvas-wrap">
+          <canvas id="qr-canvas" width="220" height="220" aria-label="Scan QR code with mobile camera"></canvas>
+        </div>
+        <ol class="modal-instructions">
+          <li>Point your mobile camera or WebXR browser at the QR code.</li>
+          <li>Tap the mobile launch banner to lock landscape orientation and unlock spatial audio.</li>
+          <li>Insert your phone into Google Cardboard or any mobile VR headset.</li>
+        </ol>
+        <div class="copy-link-wrap">
+          <input type="text" id="vr-url-input" class="copy-link-input" readonly value="https://earthsonic.up.railway.app/?vr=1" aria-label="Direct VR link">
+          <button type="button" id="btn-copy-vr-link" class="btn-copy">COPY LINK</button>
+        </div>
+        <div class="modal-stereo-test">
+          <a href="/?vr=1" class="stereo-test-link" target="_blank" rel="noopener noreferrer">Launch PC Stereo Test View &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

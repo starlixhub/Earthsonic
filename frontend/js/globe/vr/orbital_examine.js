@@ -42,6 +42,32 @@ import { createGaiaStarfieldMesh, createHipparcosStarfield, STARFIELD_RADIUS } f
 import { TOTAL_MONTHS, interpolateHarmonizedRecord } from './vr_timeline.js';
 import { VRSpatialAudio } from './vr_audio.js';
 
+// Register Google Cardboard barrel lens distortion shader in Babylon ShaderStore
+if (typeof BABYLON !== 'undefined' && BABYLON.Effect && BABYLON.Effect.ShadersStore) {
+  BABYLON.Effect.ShadersStore['vrDistortionPixelShader'] = [
+    '#ifdef GL_ES',
+    'precision highp float;',
+    '#endif',
+    'varying vec2 vUV;',
+    'uniform sampler2D textureSampler;',
+    'uniform vec2 uLensCenter;',
+    'uniform vec2 uDistortionK;',
+    'uniform float uVignetteStrength;',
+    'void main(void) {',
+    '    vec2 p = vUV - uLensCenter;',
+    '    float r2 = dot(p, p);',
+    '    vec2 distortedCoord = uLensCenter + p * (1.0 + uDistortionK.x * r2 + uDistortionK.y * r2 * r2);',
+    '    if (distortedCoord.x < 0.0 || distortedCoord.x > 1.0 || distortedCoord.y < 0.0 || distortedCoord.y > 1.0) {',
+    '        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);',
+    '        return;',
+    '    }',
+    '    vec4 color = texture2D(textureSampler, distortedCoord);',
+    '    float vignette = clamp(1.0 - r2 * uVignetteStrength, 0.0, 1.0);',
+    '    gl_FragColor = vec4(color.rgb * vignette, color.a);',
+    '}'
+  ].join('\n');
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -316,17 +342,33 @@ export class OrbitalExamineScene {
 
     if (this._vrCanvas) {
       document.body.classList.add('vr-orbital-active');
+      document.body.classList.add('vr-mode-active');
+      const mobileLauncher = document.getElementById('mobile-vr-launcher');
+      if (mobileLauncher) {
+        mobileLauncher.classList.add('hidden');
+        mobileLauncher.style.display = 'none';
+      }
+      this._ensureCardboardOverlay();
       // The canvas is display:none until this class lands, so the engine was
       // constructed against a 0x0 layout box and kept its default 300x150
       // drawing buffer. Resize once the canvas is actually laid out.
       if (this.engine && this.engine.resize) this.engine.resize();
     }
 
+    // Auto switch to landscape fullscreen when VR mode is activated
+    await this._requestLandscapeFullscreen();
+
     // Re-place the world-anchored deck for this canvas size / camera pose.
     this._deckAnchorDirty = true;
     // Recentre the gyro heading for this session.
     this._headRefSet = false;
     this._headAlphaOffset = 0;
+
+    // Keep previous NASA 3D control panel visible as requested, with exact same logic, UI, and position.
+    // The top-right gear button (⚙) can toggle it on/off as desired.
+    if (this._panel && typeof this._panel.setVisible === 'function') {
+      this._panel.setVisible(opts && opts.hideDeck ? false : true);
+    }
 
     // Gyro permission must be requested from this tap/gesture on iOS.
     await this._requestHeadTrackingPermission();
@@ -392,9 +434,14 @@ export class OrbitalExamineScene {
       this._deactivateStereo();
     }
     this._detachPointerNavigation();
+    this._exitLandscapeFullscreen();
+    if (this._panel && typeof this._panel.setVisible === 'function') {
+      this._panel.setVisible(true);
+    }
     this.engine && this.engine.stopRenderLoop();
     if (typeof document !== 'undefined') {
       document.body.classList.remove('vr-orbital-active');
+      document.body.classList.remove('vr-mode-active');
     }
     // Return to 2D dashboard
     if (this.app && typeof this.app.exitVR === 'function') {
@@ -463,34 +510,67 @@ export class OrbitalExamineScene {
     let activeId = null;
     let lastX = 0;
     let lastY = 0;
+    const activePointers = new Map();
+    let pinchDist0 = 0;
+    let pinchRadius0 = ORBITAL_INITIAL_RADIUS;
 
     const onDown = (e) => {
-      if (e.button !== 0) return;
-      dragging = true;
-      activeId = e.pointerId;
-      lastX = e.clientX;
-      lastY = e.clientY;
+      if (e.button !== undefined && e.button !== 0 && (e.pointerType === 'mouse' || !e.pointerType)) return;
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activePointers.size === 1) {
+        dragging = true;
+        activeId = e.pointerId;
+        lastX = e.clientX;
+        lastY = e.clientY;
+      } else if (activePointers.size === 2) {
+        const pts = Array.from(activePointers.values());
+        pinchDist0 = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        pinchRadius0 = this.camera ? this.camera.radius : ORBITAL_INITIAL_RADIUS;
+      }
     };
     const onMove = (e) => {
+      if (!activePointers.has(e.pointerId)) return;
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (activePointers.size >= 2) {
+        const pts = Array.from(activePointers.values());
+        const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        if (pinchDist0 > 5 && currentDist > 5 && this.camera) {
+          const ratio = pinchDist0 / currentDist;
+          this.camera.radius = Math.max(ORBITAL_MIN_RADIUS, Math.min(ORBITAL_MAX_RADIUS, pinchRadius0 * ratio));
+        }
+        return;
+      }
+
       if (!dragging || (activeId !== null && e.pointerId !== activeId)) return;
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX;
       lastY = e.clientY;
-      if (!dx && !dy) return;
+      if (!dx && !dy || !this.camera) return;
       this.camera.alpha -= dx * DRAG_ROTATE;
       this.camera.beta = clampBeta(this.camera.beta - dy * DRAG_ROTATE);
     };
     const onUp = (e) => {
-      if (activeId !== null && e.pointerId !== activeId) return;
-      dragging = false;
-      activeId = null;
+      activePointers.delete(e.pointerId);
+      if (activePointers.size === 1) {
+        const remaining = activePointers.entries().next().value;
+        activeId = remaining[0];
+        lastX = remaining[1].x;
+        lastY = remaining[1].y;
+        dragging = true;
+      } else if (activePointers.size === 0) {
+        dragging = false;
+        activeId = null;
+      }
     };
     const onWheel = (e) => {
       e.preventDefault();
       const factor = e.deltaY > 0 ? 1 + WHEEL_ZOOM : 1 - WHEEL_ZOOM;
-      this.camera.radius = Math.max(ORBITAL_MIN_RADIUS,
-        Math.min(ORBITAL_MAX_RADIUS, this.camera.radius * factor));
+      if (this.camera) {
+        this.camera.radius = Math.max(ORBITAL_MIN_RADIUS,
+          Math.min(ORBITAL_MAX_RADIUS, this.camera.radius * factor));
+      }
     };
 
     canvas.addEventListener('pointerdown', onDown);
@@ -558,6 +638,32 @@ export class OrbitalExamineScene {
     this._rightCam.position = new BABYLON.Vector3(halfSep, 0, 0);
     this._rightCam.setTarget(localTarget);
 
+    // Subtle VR lens distortion for a realistic headset experience (spec §3)
+    try {
+      if (BABYLON.PostProcess) {
+        const createEyeDistortionPP = (name, camera) => {
+          const pp = new BABYLON.PostProcess(
+            name,
+            'vrDistortion',
+            ['uLensCenter', 'uDistortionK', 'uVignetteStrength'],
+            ['textureSampler'],
+            1.0,
+            camera
+          );
+          pp.onApply = (effect) => {
+            effect.setFloat2('uLensCenter', 0.5, 0.5);
+            effect.setFloat2('uDistortionK', 0.12, 0.04);
+            effect.setFloat('uVignetteStrength', 0.45);
+          };
+          return pp;
+        };
+        this._leftDistortionPP = createEyeDistortionPP('VRDistortionLeft', this._leftCam);
+        this._rightDistortionPP = createEyeDistortionPP('VRDistortionRight', this._rightCam);
+      }
+    } catch (ppErr) {
+      console.warn('[ORBITAL VR] VR lens distortion postprocess notice:', ppErr);
+    }
+
     this.scene.activeCameras = [this._leftCam, this._rightCam];
   }
 
@@ -565,6 +671,8 @@ export class OrbitalExamineScene {
     this._stereoActive = false;
     this.scene.activeCameras = [];
     this.scene.activeCamera = this.camera;
+    if (this._leftDistortionPP)  { try { this._leftDistortionPP.dispose(); } catch (_) {} this._leftDistortionPP = null; }
+    if (this._rightDistortionPP) { try { this._rightDistortionPP.dispose(); } catch (_) {} this._rightDistortionPP = null; }
     if (this._leftCam)  { this._leftCam.dispose();  this._leftCam = null; }
     if (this._rightCam) { this._rightCam.dispose(); this._rightCam = null; }
     if (this._headNode) { this._headNode.dispose(); this._headNode = null; }
@@ -1640,6 +1748,9 @@ export class OrbitalExamineScene {
     // in the render loop via gamepad API.
     document.addEventListener('keydown', (e) => {
       if ((e.code === 'Enter' || e.code === 'Space') && !e.repeat) onPress();
+      if ((e.key === 'c' || e.key === 'C' || e.key === 'd' || e.key === 'D') && !e.repeat && this.isVRActive) {
+        this.toggleControlDeck();
+      }
     });
     document.addEventListener('keyup', (e) => {
       if (e.code === 'Enter' || e.code === 'Space') onRelease();
@@ -1737,6 +1848,113 @@ export class OrbitalExamineScene {
   }
 
   // --------------------------------------------------------------------------
+  // Fullscreen & Orientation Lock (Google Cardboard Mobile VR)
+  // --------------------------------------------------------------------------
+
+  async _requestLandscapeFullscreen() {
+    if (typeof document === 'undefined') return;
+    try {
+      const docEl = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen().catch(() => {});
+        } else if (docEl.webkitRequestFullscreen) {
+          await docEl.webkitRequestFullscreen();
+        }
+      }
+    } catch (e) {
+      console.warn('[ORBITAL VR] Fullscreen request notice:', e);
+    }
+    try {
+      if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.lock === 'function') {
+        await screen.orientation.lock('landscape').catch(() => {});
+      } else if (typeof screen !== 'undefined' && typeof screen.lockOrientation === 'function') {
+        screen.lockOrientation('landscape');
+      }
+    } catch (e) {
+      console.warn('[ORBITAL VR] Orientation lock notice:', e);
+    }
+  }
+
+  _exitLandscapeFullscreen() {
+    if (typeof document === 'undefined') return;
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } catch (e) {
+      console.warn('[ORBITAL VR] Exit fullscreen notice:', e);
+    }
+    try {
+      if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.unlock === 'function') {
+        screen.orientation.unlock();
+      } else if (typeof screen !== 'undefined' && typeof screen.unlockOrientation === 'function') {
+        screen.unlockOrientation();
+      }
+    } catch (e) {
+      console.warn('[ORBITAL VR] Orientation unlock notice:', e);
+    }
+  }
+
+  toggleControlDeck() {
+    if (this._panel && typeof this._panel.toggleVisibility === 'function') {
+      const isVis = this._panel.toggleVisibility();
+      console.info(`[ORBITAL VR] Control deck ${isVis ? 'visible' : 'hidden'}`);
+      return isVis;
+    }
+    return false;
+  }
+
+  _ensureCardboardOverlay() {
+    if (typeof document === 'undefined') return null;
+    let overlay = document.getElementById('vr-cardboard-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'vr-cardboard-overlay';
+      overlay.className = 'vr-cardboard-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.innerHTML = [
+        '<svg class="vr-cardboard-svg" viewBox="0 0 2000 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">',
+        '  <!-- Google Cardboard dual biconvex barrel lens cutouts (evenodd mask) -->',
+        '  <path fill="#000000" fill-rule="evenodd" d="M 0,0 L 2000,0 L 2000,1000 L 0,1000 Z M 150,45 C 350,65 650,65 870,45 C 930,52 950,85 945,160 C 925,380 925,620 945,840 C 950,915 930,948 870,955 C 650,935 350,935 150,955 C 90,948 70,915 75,840 C 95,620 95,380 75,160 C 70,85 90,52 150,45 Z M 1850,45 C 1650,65 1350,65 1130,45 C 1070,52 1050,85 1055,160 C 1075,380 1075,620 1055,840 C 1050,915 1070,948 1130,955 C 1350,935 1650,935 1850,955 C 1910,948 1930,915 1925,840 C 1905,620 1905,380 1925,160 C 1930,85 1910,52 1850,45 Z" />',
+        '  <!-- Center alignment divider notch at bottom center -->',
+        '  <line x1="1000" y1="650" x2="1000" y2="1000" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />',
+        '</svg>',
+        '<button id="vr-btn-close" class="vr-cardboard-btn vr-btn-close" title="Exit VR" aria-label="Exit VR">',
+        '  <svg viewBox="0 0 24 24" width="24" height="24" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">',
+        '    <line x1="18" y1="6" x2="6" y2="18"></line>',
+        '    <line x1="6" y1="6" x2="18" y2="18"></line>',
+        '  </svg>',
+        '</button>',
+        '<button id="vr-btn-deck-toggle" class="vr-cardboard-btn vr-btn-gear" title="Toggle Control Deck" aria-label="Toggle Control Deck">',
+        '  <svg viewBox="0 0 24 24" width="24" height="24" fill="#ffffff">',
+        '    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>',
+        '  </svg>',
+        '</button>'
+      ].join('\n');
+      document.body.appendChild(overlay);
+
+      const closeBtn = overlay.querySelector('#vr-btn-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.exitVR();
+        });
+      }
+      const gearBtn = overlay.querySelector('#vr-btn-deck-toggle');
+      if (gearBtn) {
+        gearBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleControlDeck();
+        });
+      }
+    }
+    return overlay;
+  }
+
+  // --------------------------------------------------------------------------
   // Canvas management
   // --------------------------------------------------------------------------
 
@@ -1759,13 +1977,40 @@ export class OrbitalExamineScene {
       style.id = 'vr-orbital-canvas-styles';
       style.textContent = [
         '.vr-orbital-canvas {',
-        '  position: fixed; inset: 0; width: 100vw; height: 100vh;',
-        '  display: none; z-index: 70; outline: none; touch-action: none;',
+        '  position: fixed !important; inset: 0 !important; top: 0 !important; left: 0 !important;',
+        '  width: 100vw !important; height: 100vh !important; width: 100dvw !important; height: 100dvh !important;',
+        '  display: none; z-index: 99990 !important; outline: none; touch-action: none; margin: 0 !important; padding: 0 !important;',
+        '  background: #000000 !important;',
         '}',
-        'body.vr-orbital-active .vr-orbital-canvas { display: block; }'
+        'body.vr-orbital-active {',
+        '  overflow: hidden !important; margin: 0 !important; padding: 0 !important; background: #000000 !important;',
+        '  width: 100vw !important; height: 100vh !important; width: 100dvw !important; height: 100dvh !important;',
+        '}',
+        'body.vr-orbital-active .vr-orbital-canvas { display: block !important; }',
+        'body.vr-orbital-active #mobile-vr-launcher,',
+        'body.vr-orbital-active #vr-desktop-modal { display: none !important; }',
+        '.vr-cardboard-overlay {',
+        '  position: fixed !important; inset: 0 !important; top: 0 !important; left: 0 !important;',
+        '  width: 100vw !important; height: 100vh !important; width: 100dvw !important; height: 100dvh !important;',
+        '  display: none; z-index: 99995 !important; pointer-events: none; overflow: hidden; margin: 0 !important; padding: 0 !important;',
+        '}',
+        'body.vr-orbital-active .vr-cardboard-overlay { display: block !important; }',
+        '.vr-cardboard-svg {',
+        '  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: block;',
+        '}',
+        '.vr-cardboard-btn {',
+        '  position: absolute; top: 16px; width: 44px; height: 44px; background: transparent; border: none;',
+        '  padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;',
+        '  pointer-events: auto; z-index: 100000 !important; opacity: 0.85; transition: opacity 0.2s, transform 0.15s;',
+        '  touch-action: manipulation; box-shadow: none !important; outline: none;',
+        '}',
+        '.vr-cardboard-btn:hover, .vr-cardboard-btn:active { opacity: 1.0; transform: scale(1.1); box-shadow: none !important; }',
+        '.vr-cardboard-btn.vr-btn-close { left: 18px; }',
+        '.vr-cardboard-btn.vr-btn-gear { right: 18px; }'
       ].join('\n');
       document.head.appendChild(style);
     }
+    this._ensureCardboardOverlay();
     return canvas;
   }
 
@@ -1779,6 +2024,12 @@ export class OrbitalExamineScene {
     if (this.engine) { this.engine.dispose(); }
     if (this._vrCanvas && this._vrCanvas.parentNode) {
       this._vrCanvas.parentNode.removeChild(this._vrCanvas);
+    }
+    if (typeof document !== 'undefined') {
+      const overlay = document.getElementById('vr-cardboard-overlay');
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
     }
   }
 }
@@ -1877,6 +2128,28 @@ export class OrbitalControlPanel {
     // Look at a control for 3 s and it fires (the user asked for hold-to-press
     // on the centre of the view); a centre-button click also fires immediately.
     this._dwellToActivate = true;
+    this._visible = true;
+  }
+
+  setVisible(visible) {
+    this._visible = Boolean(visible);
+    if (this._panelRoot) {
+      this._panelRoot.setEnabled(this._visible);
+    }
+    if (!this._visible) {
+      this.stopScan();
+    } else {
+      this._updateCameraAnchor(0);
+    }
+  }
+
+  toggleVisibility() {
+    this.setVisible(!this._visible);
+    return this._visible;
+  }
+
+  get isVisible() {
+    return this._visible !== false;
   }
 
   init() {
@@ -2083,6 +2356,7 @@ export class OrbitalControlPanel {
    * @returns {number|null} button index under that pixel
    */
   pickButtonAtScreen(px, py) {
+    if (!this._visible) return null;
     const sc = this._scene;
     if (!sc || !sc.getEngine) return null;
     const engine = sc.getEngine();
@@ -2134,6 +2408,7 @@ export class OrbitalControlPanel {
    * @returns {number|null} index of the button at the view centre
    */
   _buttonAtViewCenter() {
+    if (!this._visible) return null;
     const sc = this._scene;
     if (!sc || !sc.getEngine) return null;
     const engine = sc.getEngine();
@@ -2904,6 +3179,7 @@ export class OrbitalControlPanel {
    * @param {number} delta
    */
   update(delta) {
+    if (!this._visible) return;
     this._updateCameraAnchor(delta);
 
     // One-button scan owns the highlight and its progress bar.

@@ -375,3 +375,10 @@ class TestTier4RealWorldAudioSynthesis:
             assert abs(total_frames - expected_frames) < 4410, (
                 f"Expected ~{expected_frames} frames for {duration}s, got {total_frames}"
             )
+
+        # Empty columns validation: must cleanly raise ValueError
+        with pytest.raises(ValueError, match="Columns list cannot be empty"):
+            if hasattr(synthesizer, "synthesize_wav"):
+                synthesizer.synthesize_wav("night_lights", [])
+            elif hasattr(synthesizer, "sonify_layer"):
+                synthesizer.sonify_layer("night_lights", [])

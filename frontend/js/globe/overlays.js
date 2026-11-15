@@ -8,6 +8,7 @@
  */
 
 import { ZonalHeatmapShader, OceanThermalShader, CO2AtmosphereShader } from './shaders.js';
+import { LAYER_REGISTRY, getLayer } from './layers.js';
 
 // Mauna Loa Observatory exact coordinates
 export const MAUNA_LOA_COORDS = {
@@ -51,7 +52,8 @@ export class TemperatureOverlay {
     this.visible = false;
     // Zonal bands tint the Blue Marble. The ocean is dark, so a warm wash
     // reads as brown at much above ~0.15 and the globe stops looking like Earth.
-    this.opacity = 0.14;
+    const tempConfig = getLayer('temperature');
+    this.opacity = (tempConfig && tempConfig.overlayOpacity !== undefined) ? tempConfig.overlayOpacity : 0.14;
     this.bandAnomalies = new Float32Array(14).fill(0.0);
 
     const geometry = new THREE.SphereGeometry(this.radius, 64, 64);
@@ -355,6 +357,106 @@ export class CO2Overlay {
 }
 
 /**
+ * 5. Satellite Textured Overlay
+ * Renders high-resolution satellite imagery on a spherical Three.js mesh (radius 1.002).
+ * Supports Night Lights A/B cross-fade blending between 2012 and 2023 textures.
+ */
+export class SatelliteTexturedOverlay {
+  constructor(THREE, layerConfig, radius = 1.002) {
+    this.THREE = THREE;
+    this.id = layerConfig.id;
+    this.radius = radius;
+    this.visible = false;
+    this.baseOpacity = layerConfig.overlayOpacity !== undefined ? layerConfig.overlayOpacity : 0.8;
+    this.opacity = this.baseOpacity;
+    this._abBlend = 0.5;
+
+    this.group = new THREE.Group();
+    this.group.name = `SatelliteOverlayGroup_${this.id}`;
+
+    const geometry = new THREE.SphereGeometry(this.radius, 64, 64);
+    this.material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: this.opacity,
+      depthWrite: false,
+      blending: THREE.NormalBlending
+    });
+
+    this.mesh = new THREE.Mesh(geometry, this.material);
+    this.mesh.name = `SatelliteOverlayMesh_${this.id}`;
+    this.group.add(this.mesh);
+
+    // If night lights, setup dual meshes for 2012 and 2023 cross-fade
+    if (this.id === 'night_lights') {
+      this.material2012 = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: this.baseOpacity * 0.5,
+        depthWrite: false,
+        blending: THREE.NormalBlending
+      });
+      this.mesh2012 = new THREE.Mesh(geometry, this.material2012);
+      this.mesh2012.name = "NightLights2012Mesh";
+
+      this.material2023 = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: this.baseOpacity * 0.5,
+        depthWrite: false,
+        blending: THREE.NormalBlending
+      });
+      this.mesh2023 = new THREE.Mesh(geometry, this.material2023);
+      this.mesh2023.name = "NightLights2023Mesh";
+
+      this.group.remove(this.mesh);
+      this.group.add(this.mesh2012);
+      this.group.add(this.mesh2023);
+    }
+
+    if (typeof THREE.TextureLoader === 'function') {
+      const loader = new THREE.TextureLoader();
+      if (layerConfig.texture && this.id !== 'night_lights') {
+        loader.load(layerConfig.texture, (tex) => {
+          this.material.map = tex;
+          this.material.needsUpdate = true;
+        });
+      } else if (this.id === 'night_lights') {
+        loader.load('/assets/layers/night_lights_2012.jpg', (tex) => {
+          this.material2012.map = tex;
+          this.material2012.needsUpdate = true;
+        });
+        loader.load('/assets/layers/night_lights_2023.jpg', (tex) => {
+          this.material2023.map = tex;
+          this.material2023.needsUpdate = true;
+        });
+      }
+    }
+
+    this.group.visible = this.visible;
+  }
+
+  setVisible(visible) {
+    this.visible = Boolean(visible);
+    this.group.visible = this.visible;
+  }
+
+  setOpacity(opacity) {
+    this.opacity = Math.max(0.0, Math.min(1.0, opacity));
+    if (this.material) this.material.opacity = this.opacity;
+    if (this.material2012 && this.material2023) {
+      this.material2012.opacity = this.opacity * (1.0 - this._abBlend);
+      this.material2023.opacity = this.opacity * this._abBlend;
+    }
+  }
+
+  setABBlend(blendRatio) {
+    this._abBlend = Math.max(0.0, Math.min(1.0, Number(blendRatio) || 0));
+    if (this.material2012 && this.material2023) {
+      this.material2012.opacity = this.opacity * (1.0 - this._abBlend);
+      this.material2023.opacity = this.opacity * this._abBlend;
+    }
+  }
+}
+
+/**
  * OverlayManager
  * Master coordinator managing all 4 scientific overlays in the Three.js scene.
  */
@@ -376,6 +478,22 @@ export class OverlayManager {
     this.rootGroup.add(this.ocean.mesh);
     this.rootGroup.add(this.co2.group);
 
+    // Initialize satellite overlays
+    this.satelliteOverlays = new Map();
+    const satConfigs = [
+      getLayer('night_lights'),
+      getLayer('lightning'),
+      getLayer('gedi_forest'),
+      getLayer('co2_dyamond')
+    ];
+    for (const cfg of satConfigs) {
+      if (cfg) {
+        const satOverlay = new SatelliteTexturedOverlay(THREE, cfg, 1.002);
+        this.satelliteOverlays.set(cfg.id, satOverlay);
+        this.rootGroup.add(satOverlay.group);
+      }
+    }
+
     // Active overlay tracking
     this.activeOverlayId = null;
   }
@@ -393,14 +511,44 @@ export class OverlayManager {
       this.seaIce.setVisible(false);
       this.ocean.setVisible(false);
       this.co2.setVisible(false);
+      for (const sat of this.satelliteOverlays.values()) {
+        sat.setVisible(false);
+      }
       return;
     }
 
     const id = datasetId.toLowerCase();
+
+    // Check if matching any satellite overlay
+    let matchedSat = null;
+    for (const [satId, satOverlay] of this.satelliteOverlays.entries()) {
+      const isMatch = (id === satId) ||
+        (satId === 'night_lights' && id.includes('night')) ||
+        (satId === 'lightning' && id.includes('lightning')) ||
+        (satId === 'gedi_forest' && (id.includes('gedi') || id.includes('forest') || id.includes('canopy'))) ||
+        (satId === 'co2_dyamond' && (id.includes('dyamond') || (id.includes('co2') && id.includes('sat'))));
+
+      if (isMatch) {
+        matchedSat = satId;
+        satOverlay.setVisible(true);
+      } else {
+        satOverlay.setVisible(false);
+      }
+    }
+
+    if (matchedSat) {
+      this.temperature.setVisible(false);
+      this.seaIce.setVisible(false);
+      this.ocean.setVisible(false);
+      this.co2.setVisible(false);
+      return;
+    }
+
+    // Climate overlays
     this.temperature.setVisible(id.includes('temp') && !id.includes('ocean'));
     this.seaIce.setVisible(id.includes('ice'));
     this.ocean.setVisible(id.includes('ocean'));
-    this.co2.setVisible(id.includes('co2') || id.includes('carbon'));
+    this.co2.setVisible((id.includes('co2') || id.includes('carbon')) && !id.includes('dyamond'));
   }
 
   /**
@@ -411,6 +559,61 @@ export class OverlayManager {
     this.seaIce.setVisible(visible);
     this.ocean.setVisible(visible);
     this.co2.setVisible(visible);
+    for (const sat of this.satelliteOverlays.values()) {
+      sat.setVisible(visible);
+    }
+  }
+
+  getSatelliteOverlay(id) {
+    return this.satelliteOverlays.get(id) || null;
+  }
+
+  setNightLightsBlend(ratio) {
+    const nl = this.satelliteOverlays.get('night_lights');
+    if (nl && typeof nl.setABBlend === 'function') {
+      nl.setABBlend(ratio);
+    }
+  }
+
+  triggerLightningFlash(lat, lon, intensity = 1.0) {
+    if (!this.lightningSpriteGroup) {
+      this.lightningSpriteGroup = new this.THREE.Group();
+      this.lightningSpriteGroup.name = "LightningFlashGroup";
+      this.rootGroup.add(this.lightningSpriteGroup);
+    }
+    const pos = latLonToVector3(lat, lon, 1.006, this.THREE);
+    const flashGeom = new this.THREE.BufferGeometry();
+    flashGeom.setAttribute('position', new this.THREE.Float32BufferAttribute([pos.x, pos.y, pos.z], 3));
+    const flashMat = new this.THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 16 * Math.max(0.4, intensity),
+      transparent: true,
+      opacity: 1.0,
+      blending: this.THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const flashPoint = new this.THREE.Points(flashGeom, flashMat);
+    this.lightningSpriteGroup.add(flashPoint);
+
+    const startTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const fade = () => {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const elapsed = now - startTime;
+      const progress = elapsed / 250;
+      if (progress >= 1.0) {
+        this.lightningSpriteGroup.remove(flashPoint);
+        flashGeom.dispose();
+        flashMat.dispose();
+      } else {
+        flashMat.opacity = 1.0 - progress;
+        if (typeof requestAnimationFrame !== 'undefined') {
+          requestAnimationFrame(fade);
+        }
+      }
+    };
+    if (typeof requestAnimationFrame !== 'undefined') {
+      requestAnimationFrame(fade);
+    }
   }
 
   /**

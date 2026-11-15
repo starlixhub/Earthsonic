@@ -24,6 +24,8 @@ import { exportMixerToWav } from './audio/exporter.js';
 import { showToast, updateTelemetryStatus, getFormattedMissionTime } from './ui/telemetry.js';
 import { VRLauncher } from './ui/vr_launcher.js';
 import { installEarthsonicVR, installOrbitalExamineVR } from './globe/vr/index.js';
+import { SweepController } from './audio/sweep.js';
+import { getLayer } from './globe/layers.js';
 
 /**
  * Universal slider fill percentage calculator for aerospace range controls.
@@ -101,6 +103,12 @@ export class EarthSonicApp {
     this._recordIndex = 0;
     this._loadingSafetyTimer = null;
 
+    // Satellite & Sweep state
+    this.mode = 'climate'; // 'climate' | 'layers'
+    this.activeSatLayer = 'night_lights';
+    this.sweepController = null;
+    this._lastClimateLayer = 'temperature';
+
     // DOM Elements Cache
     this.elements = {};
   }
@@ -121,21 +129,21 @@ export class EarthSonicApp {
       // 1. Initialize Flight Deck Telemetry
       this.initTelemetry();
 
-      // 2. Initialize 3D Earth Globe
-      await this.initGlobe();
-
-      // 3. Fetch NASA Observation Data
-      await this.loadNasaObservations();
-
-      // 4. Initialize Multi-Track Orchestra & Real-Time Visualizer
+      // 2. Initialize Multi-Track Orchestra & Real-Time Visualizer
       this.initAudioAndVisualizer();
 
-      // 5. Initialize Historical Comparison Tool & Scientific Info Drawer
+      // 3. Initialize Historical Comparison Tool & Scientific Info Drawer
       this.initComparisonAndInfoPanel();
 
-      // 6. Bind UI Controls & Keyboard Shortcuts
+      // 4. Bind UI Controls & Keyboard Shortcuts IMMEDIATELY so buttons are responsive
       this.bindUserInterface();
       this.bindKeyboardShortcuts();
+
+      // 5. Initialize 3D Earth Globe
+      await this.initGlobe();
+
+      // 6. Fetch NASA Observation Data
+      await this.loadNasaObservations();
 
       this.isInitialized = true;
       this.hideLoadingScreen();
@@ -203,7 +211,13 @@ export class EarthSonicApp {
       btnJudgeTour: document.getElementById('btn-judge-tour'),
       btnOpenSensors: document.getElementById('btn-open-sensors'),
       btnExportWav: document.getElementById('btn-export-wav'),
-      btnEnterVr: document.getElementById('btn-enter-vr')
+      btnEnterVr: document.getElementById('btn-enter-vr'),
+      btnModeClimate: document.getElementById('btn-mode-climate'),
+      btnModeLayers: document.getElementById('btn-mode-layers'),
+      satellitePicker: document.getElementById('satellite-layer-picker'),
+      nightLightsAbContainer: document.getElementById('night-lights-ab-container'),
+      nightLightsAbSlider: document.getElementById('night-lights-ab-slider'),
+      orchestraGrid: document.getElementById('orchestra-channels-grid')
     };
   }
 
@@ -322,6 +336,9 @@ export class EarthSonicApp {
       peakTextElement: 'peak-db-text'
     });
 
+    // Initialize Earth Jukebox Sweep Controller
+    this.initSweepController();
+
     // Milestone M3: Connect VR Subsystems with Web Audio Mixer
     if (this.vr && typeof this.vr.setMixer === 'function') {
       this.vr.setMixer(this.mixer);
@@ -411,6 +428,76 @@ export class EarthSonicApp {
   }
 
   /**
+   * Initialize Earth Jukebox Longitude Sweep Controller.
+   */
+  initSweepController() {
+    this.sweepController = new SweepController({
+      audioCtx: this.mixer ? this.mixer.audioCtx : null,
+      overlayManager: this.globe ? this.globe.overlays : null,
+      duration: 20.0,
+      width: 720
+    });
+
+    this.sweepController.on('tick', ({ time, duration, col, lon }) => {
+      if (this.mode !== 'layers') return;
+      if (this.elements.seekSlider) {
+        this.elements.seekSlider.value = time;
+        updateSliderFill(this.elements.seekSlider);
+      }
+      if (this.elements.timeDisplay) {
+        this.elements.timeDisplay.textContent = `${formatTimeMMSS(time)} / ${formatTimeMMSS(duration)}`;
+      }
+      if (this.elements.dateLabel) {
+        const ew = lon >= 0 ? `${lon.toFixed(1)}°E` : `${Math.abs(lon).toFixed(1)}°W`;
+        this.elements.dateLabel.textContent = `LONGITUDE: ${ew} (COL ${col})`;
+      }
+    });
+
+    this.sweepController.on('play', () => {
+      if (this.mode !== 'layers') return;
+      if (this.elements.btnMasterPlay) {
+        this.elements.btnMasterPlay.classList.add('active');
+        this.elements.btnMasterPlay.textContent = 'Playing';
+      }
+      if (this.elements.btnMasterPause) this.elements.btnMasterPause.classList.remove('active');
+    });
+
+    this.sweepController.on('pause', () => {
+      if (this.mode !== 'layers') return;
+      if (this.elements.btnMasterPlay) {
+        this.elements.btnMasterPlay.classList.remove('active');
+        this.elements.btnMasterPlay.textContent = 'Play';
+      }
+      if (this.elements.btnMasterPause) this.elements.btnMasterPause.classList.add('active');
+    });
+
+    this.sweepController.on('stop', () => {
+      if (this.mode !== 'layers') return;
+      if (this.elements.btnMasterPlay) {
+        this.elements.btnMasterPlay.classList.remove('active');
+        this.elements.btnMasterPlay.textContent = 'Play';
+      }
+      if (this.elements.btnMasterPause) this.elements.btnMasterPause.classList.remove('active');
+    });
+
+    this.loadSatelliteLayerData(this.activeSatLayer || 'night_lights');
+  }
+
+  async loadSatelliteLayerData(layerId) {
+    try {
+      const res = await fetch(`/api/layers/${layerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (this.sweepController) {
+          this.sweepController.setLayerData(layerId, data);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
    * Initialize Historical Comparison Tool and Scientific Info Panel.
    */
   initComparisonAndInfoPanel() {
@@ -486,6 +573,13 @@ export class EarthSonicApp {
       }
       showToast('Loading four STRAUSS observation stems…', 'info', 2500);
       await this.mixer.loadManifest('/api/sonify/orchestra?duration=20');
+
+      if (this._activeSoloTrack) {
+        for (const track of this.mixer.getAllTracks()) {
+          track.isSoloed = (track.id === this._activeSoloTrack);
+        }
+        this.mixer.updateSoloMuteMatrix();
+      }
 
       if (this.elements.seekSlider) this.elements.seekSlider.max = this.mixer.duration;
       if (this.elements.timeDisplay) {
@@ -757,9 +851,13 @@ export class EarthSonicApp {
             temperature: 'surface-temperature',
             co2: 'atmospheric-co2',
             ocean: 'ocean-temperature',
-            sea_ice: 'sea-ice-extent'
+            sea_ice: 'sea-ice-extent',
+            night_lights: 'night_lights',
+            lightning: 'lightning',
+            gedi_forest: 'gedi_forest',
+            co2_dyamond: 'co2_dyamond'
           };
-          this.infoPanel.open(layerMap[activeLayer] || 'surface-temperature');
+          this.infoPanel.open(layerMap[activeLayer] || activeLayer || 'surface-temperature');
         }
       });
     }
@@ -767,6 +865,14 @@ export class EarthSonicApp {
     // Master Transport: Play
     if (this.elements.btnMasterPlay) {
       this.elements.btnMasterPlay.addEventListener('click', async () => {
+        if (this.mode === 'layers' && this.sweepController) {
+          if (this.sweepController.isPlaying) {
+            this.sweepController.pause();
+          } else {
+            this.sweepController.play();
+          }
+          return;
+        }
         await this.loadAudioStemsIfNeeded();
         if (this.mixer.isPlaying) {
           this.mixer.pause();
@@ -779,6 +885,10 @@ export class EarthSonicApp {
     // Master Transport: Pause
     if (this.elements.btnMasterPause) {
       this.elements.btnMasterPause.addEventListener('click', () => {
+        if (this.mode === 'layers' && this.sweepController) {
+          this.sweepController.pause();
+          return;
+        }
         if (this.mixer) this.mixer.pause();
       });
     }
@@ -786,6 +896,17 @@ export class EarthSonicApp {
     // Master Transport: Stop
     if (this.elements.btnMasterStop) {
       this.elements.btnMasterStop.addEventListener('click', () => {
+        if (this.mode === 'layers' && this.sweepController) {
+          this.sweepController.stop();
+          if (this.elements.seekSlider) {
+            this.elements.seekSlider.value = 0;
+            updateSliderFill(this.elements.seekSlider);
+          }
+          if (this.elements.timeDisplay) {
+            this.elements.timeDisplay.textContent = `00:00 / ${formatTimeMMSS(this.sweepController.duration)}`;
+          }
+          return;
+        }
         if (this.mixer) {
           this.mixer.stop();
           if (this.elements.seekSlider) {
@@ -821,8 +942,13 @@ export class EarthSonicApp {
     // Scrubber Seeking
     if (this.elements.seekSlider) {
       this.elements.seekSlider.addEventListener('input', async (e) => {
-        await this.loadAudioStemsIfNeeded();
         const targetSec = parseFloat(e.target.value);
+        if (this.mode === 'layers' && this.sweepController) {
+          this.sweepController.seek(targetSec);
+          updateSliderFill(this.elements.seekSlider);
+          return;
+        }
+        await this.loadAudioStemsIfNeeded();
         if (this.mixer) this.mixer.seek(targetSec);
         updateSliderFill(this.elements.seekSlider);
       });
@@ -850,6 +976,29 @@ export class EarthSonicApp {
           btn.classList.toggle('active', track.isSoloed);
           this.updateStripSilencedState();
           this.updateVisualAcousticCoupling();
+
+          // Two-way sync: update left rail active layer button if soloed
+          const TRACK_TO_LAYER = {
+            surface_temperature: 'temperature',
+            atmospheric_co2: 'co2',
+            ocean_temperature: 'ocean',
+            sea_ice_extent: 'sea_ice'
+          };
+          const layerKey = TRACK_TO_LAYER[trackId];
+          if (track.isSoloed && layerKey) {
+            document.querySelectorAll('.layer-btn').forEach(b => {
+              const match = b.getAttribute('data-layer') === layerKey;
+              b.classList.toggle('active', match);
+              b.setAttribute('aria-pressed', match ? 'true' : 'false');
+            });
+            this._lastClimateLayer = layerKey;
+            this._activeSoloTrack = trackId;
+            if (this.globe) this.globe.setActiveOverlay(layerKey);
+            this.updateLayerLegend(layerKey);
+            this.updateGlobeToRecordIndex(this._recordIndex);
+          } else if (this.mixer && !this.mixer.getAllTracks().some(t => t.isSoloed)) {
+            this._activeSoloTrack = null;
+          }
         }
       });
     });
@@ -889,10 +1038,55 @@ export class EarthSonicApp {
     // Layer Switcher buttons
     document.querySelectorAll('.layer-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
         const layer = btn.getAttribute('data-layer');
+        const LAYER_TO_TRACK = {
+          temperature: 'surface_temperature',
+          co2: 'atmospheric_co2',
+          ocean: 'ocean_temperature',
+          sea_ice: 'sea_ice_extent'
+        };
+        const targetTrack = LAYER_TO_TRACK[layer];
+
+        // Check if this layer's stem is already the only soloed track
+        let isAlreadySoloed = false;
+        if (this.mixer && targetTrack) {
+          const allTracks = this.mixer.getAllTracks();
+          const anySolo = allTracks.some(t => t.isSoloed);
+          isAlreadySoloed = anySolo && allTracks.every(t => (t.id === targetTrack ? t.isSoloed : !t.isSoloed));
+        }
+
+        if (isAlreadySoloed) {
+          // Toggle: restore full 4-instrument orchestra
+          if (this.mixer) {
+            for (const track of this.mixer.getAllTracks()) {
+              track.isSoloed = false;
+            }
+            this.mixer.updateSoloMuteMatrix();
+          }
+          this._activeSoloTrack = null;
+          showToast('Full Orchestra · all four channels active', 'info', 2000);
+        } else {
+          // Solo the selected layer's stem so the user hears its distinct instrument
+          this._activeSoloTrack = targetTrack || null;
+          if (this.mixer && targetTrack) {
+            for (const track of this.mixer.getAllTracks()) {
+              track.isSoloed = (track.id === targetTrack);
+            }
+            this.mixer.updateSoloMuteMatrix();
+          }
+        }
+
+        document.querySelectorAll('.layer-btn').forEach(b => {
+          const active = b === btn;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        this._lastClimateLayer = layer;
+        if (this.mode === 'layers') {
+          this.setObservationMode('climate');
+        }
+
         if (layer === 'all') {
           if (this.globe) {
             this.globe.overlays.activeOverlayId = 'all';
@@ -912,12 +1106,48 @@ export class EarthSonicApp {
             this.globe.flyTo(19.53, -155.57, 1.85, 0.9); // Mauna Loa centered
           } else if (layer === 'ocean') {
             this.globe.flyTo(0.0, -140.0, 2.1, 0.9); // Equatorial Pacific centered
+          } else if (layer === 'temperature') {
+            this.globe.flyTo(20.0, 0.0, 2.3, 0.9); // Overview
           }
         }
 
         this.updateGlobeToRecordIndex(this._recordIndex);
       });
     });
+
+    // Observation mode toggle buttons
+    if (this.elements.btnModeClimate && this.elements.btnModeLayers) {
+      this.elements.btnModeClimate.addEventListener('click', () => this.setObservationMode('climate'));
+      this.elements.btnModeLayers.addEventListener('click', () => this.setObservationMode('layers'));
+    }
+
+    // Satellite layer switcher buttons
+    document.querySelectorAll('.sat-layer-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sat-layer-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+
+        const layer = btn.getAttribute('data-layer');
+        this.selectSatelliteLayer(layer);
+      });
+    });
+
+    // Night lights A/B cross-fade wipe slider
+    if (this.elements.nightLightsAbSlider) {
+      this.elements.nightLightsAbSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (this.globe && this.globe.overlays) {
+          this.globe.overlays.setNightLightsBlend(val);
+        }
+        if (this.sweepController) {
+          this.sweepController.setNightLightsBlend(val);
+        }
+      });
+    }
 
     // Geographic Navigation Quick-Links
     const flyMlo = document.getElementById('btn-fly-mlo');
@@ -1025,6 +1255,92 @@ export class EarthSonicApp {
       }, preset.soloDurationSec * 1000);
     } else {
       showToast(`Event record: ${preset.name}`, 'info', 3000);
+    }
+  }
+
+  /**
+   * Toggle observation mode ('climate' vs 'layers').
+   * @param {string} mode
+   */
+  setObservationMode(mode) {
+    this.mode = mode;
+    if (mode === 'climate') {
+      if (this.elements.btnModeClimate) {
+        this.elements.btnModeClimate.classList.add('active');
+        this.elements.btnModeClimate.setAttribute('aria-pressed', 'true');
+      }
+      if (this.elements.btnModeLayers) {
+        this.elements.btnModeLayers.classList.remove('active');
+        this.elements.btnModeLayers.setAttribute('aria-pressed', 'false');
+      }
+      if (this.elements.satellitePicker) {
+        this.elements.satellitePicker.classList.add('hidden');
+      }
+      if (this.elements.orchestraGrid) {
+        this.elements.orchestraGrid.classList.remove('hidden');
+      }
+      if (this.sweepController && this.sweepController.isPlaying) {
+        this.sweepController.pause();
+      }
+      const activeClimate = this._lastClimateLayer || 'temperature';
+      if (this.globe) this.globe.setActiveOverlay(activeClimate);
+      this.updateLayerLegend(activeClimate);
+      showToast('Switched to Climate Time Series mode', 'info', 2500);
+    } else {
+      if (this.elements.btnModeLayers) {
+        this.elements.btnModeLayers.classList.add('active');
+        this.elements.btnModeLayers.setAttribute('aria-pressed', 'true');
+      }
+      if (this.elements.btnModeClimate) {
+        this.elements.btnModeClimate.classList.remove('active');
+        this.elements.btnModeClimate.setAttribute('aria-pressed', 'false');
+      }
+      if (this.elements.satellitePicker) {
+        this.elements.satellitePicker.classList.remove('hidden');
+      }
+      if (this.mixer && this.mixer.isPlaying) {
+        this.mixer.pause();
+      }
+      this.selectSatelliteLayer(this.activeSatLayer || 'night_lights');
+      showToast('Switched to Satellite Layers mode ("Earth Jukebox")', 'info', 2500);
+    }
+  }
+
+  /**
+   * Activate satellite layer by ID.
+   * @param {string} layerId
+   */
+  selectSatelliteLayer(layerId) {
+    this.activeSatLayer = layerId;
+    if (this.elements.nightLightsAbContainer) {
+      if (layerId === 'night_lights') {
+        this.elements.nightLightsAbContainer.classList.remove('hidden');
+      } else {
+        this.elements.nightLightsAbContainer.classList.add('hidden');
+      }
+    }
+    if (this.globe) {
+      this.globe.setActiveOverlay(layerId);
+    }
+    this.loadSatelliteLayerData(layerId);
+    this.updateSatelliteHud(layerId);
+  }
+
+  /**
+   * Update flight-deck HUD with satellite mission metadata.
+   * @param {string} layerId
+   */
+  updateSatelliteHud(layerId) {
+    const config = getLayer(layerId);
+    if (!config) return;
+    if (this.elements.hudSubtitle) {
+      this.elements.hudSubtitle.textContent = config.name.toUpperCase();
+    }
+    if (this.elements.hudVal) {
+      this.elements.hudVal.textContent = config.agency || 'NASA SVS / EIC';
+    }
+    if (this.elements.hudMeta) {
+      this.elements.hudMeta.textContent = `UNITS: ${config.units} · ${config.colormap}`;
     }
   }
 

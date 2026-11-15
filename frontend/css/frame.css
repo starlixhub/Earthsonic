@@ -97,10 +97,21 @@ body {
   min-width: 0;
 }
 
-.frame .nasa-meatball {
+.frame .nasa-meatball,
+.frame .earth-logo {
   width: 32px;
   height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
   filter: none;
+}
+
+.earth-logo-lg {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 1.1rem;
 }
 
 .frame .mission-title {
@@ -127,10 +138,55 @@ body {
 .frame .header-status-cluster {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   flex-shrink: 0;
   margin-left: auto;
-  margin-right: var(--sp-4);
+  margin-right: var(--sp-3);
+}
+
+/* Astro UXDS / NASA Open MCT telemetry chips */
+.frame .telemetry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline-2);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: 0.05em;
+  box-shadow: none;
+}
+
+.frame .telemetry-chip-tag {
+  color: var(--signal);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 9px;
+  padding: 2px 4px;
+  background: var(--signal-wash);
+  border-radius: 2px;
+}
+
+.frame .telemetry-chip-val {
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.frame .status-dot-pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  outline: 2px solid rgba(45, 212, 191, 0.25);
+  box-shadow: none;
 }
 
 .frame .status-badge {
@@ -148,12 +204,22 @@ body {
   text-transform: none;
 }
 
-/* The mission clock is a full timestamp ("2026-11-14 04:14:01 UTC"); the shared
-   16ch badge cap truncated it to an unreadable "6-11-14 04:0…". */
+/* The mission clock is a full timestamp ("2026-11-14 04:14:01 UTC") */
 .frame .status-badge-clock {
-  max-width: 30ch;
+  max-width: 32ch;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  border: 1px solid var(--hairline-2);
+}
+
+.frame .telemetry-chip-clock::before {
+  content: "UTC";
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 9px;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
 }
 
 .frame .status-dot {
@@ -161,7 +227,9 @@ body {
   height: 5px;
   border-radius: 50%;
   background: var(--signal);
-  box-shadow: 0 0 0 3px var(--signal-wash);
+  outline: 3px solid var(--signal-wash);
+  outline-offset: 0;
+  box-shadow: none;
 }
 
 .frame .header-command {
@@ -268,7 +336,7 @@ body {
   background: var(--panel-2);
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
-  box-shadow: 0 18px 40px var(--scrim-55);
+  box-shadow: none;
   z-index: var(--z-head);
 }
 
@@ -329,12 +397,15 @@ body {
 
 .frame .hud-value {
   font-family: var(--font-mono);
-  font-size: var(--fs-readout);
-  font-weight: 500;
-  line-height: 1;
+  font-size: clamp(20px, 2.2vw, 28px);
+  font-weight: 600;
+  line-height: 1.1;
   letter-spacing: -0.01em;
-  color: var(--text);
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .frame .hud-subtext {
@@ -403,9 +474,36 @@ body {
   color: var(--text);
 }
 
+.frame .layer-btn {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-bottom: 1px solid var(--hairline-soft);
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  letter-spacing: 0;
+  transition: background var(--dur-state) var(--ease),
+              color var(--dur-state) var(--ease),
+              border-left-color var(--dur-state) var(--ease);
+}
+
+.frame .layer-btn:hover {
+  background: var(--panel-3);
+  color: var(--text);
+  border-left-color: var(--hairline-2);
+}
+
 .frame .layer-btn.active {
-  background: var(--signal);
-  color: var(--signal-ink);
+  background: rgba(242, 160, 61, 0.12) !important;
+  color: #ffb366 !important;
+  border-left: 3px solid var(--signal) !important;
   font-weight: 600;
 }
 
@@ -506,12 +604,13 @@ body {
   grid-area: stage;
   position: relative;
   inset: auto;
-  width: auto;
-  height: auto;
+  width: auto !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background:
-    radial-gradient(120% 90% at 50% 40%, var(--ink) 0%, var(--ink) 55%, var(--ink) 100%);
+  background: var(--ink);
   user-select: none;
   z-index: var(--z-stage);
 }
@@ -553,7 +652,8 @@ body {
 
 .frame .matrix-cell.active {
   background: var(--panel-3);
-  box-shadow: inset 2px 0 0 var(--signal);
+  border-left: 2px solid var(--signal);
+  box-shadow: none;
 }
 
 .frame .matrix-label {
@@ -752,7 +852,7 @@ body {
 
 .frame .orchestra-transport {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(280px, 1fr) auto;
   align-items: center;
   gap: var(--sp-4);
   height: 100%;
@@ -1045,7 +1145,7 @@ body {
     display: none;
   }
 
-  .frame .header-status-cluster {
+  .frame .telemetry-chip-orbit {
     display: none;
   }
 }
@@ -1158,4 +1258,395 @@ body {
   .frame .btn-export-wav {
     white-space: nowrap;
   }
+}
+
+/* ============================================================================
+   Mode Toggle & Satellite Layer Controls (Milestone 4)
+   ============================================================================ */
+
+.rail-mode-toggle {
+  display: flex;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-2);
+}
+
+.mode-toggle-btn {
+  flex: 1;
+  min-height: 44px;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--tx-ui);
+}
+
+.mode-toggle-btn:hover {
+  color: var(--text);
+  background: var(--panel-3);
+}
+
+.mode-toggle-btn.active {
+  background: var(--panel-3);
+  color: var(--signal);
+  border: 1px solid var(--hairline-2);
+  box-shadow: none;
+}
+
+.satellite-layer-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-2);
+}
+
+.satellite-layer-picker.hidden {
+  display: none;
+}
+
+.satellite-picker-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-1);
+}
+
+.sat-layer-btn {
+  min-height: 44px;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--panel-3);
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--tx-ui);
+  text-align: center;
+}
+
+.sat-layer-btn:hover {
+  border-color: var(--signal);
+}
+
+.sat-layer-btn.active {
+  background: var(--signal-wash);
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.sat-ab-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.sat-ab-slider-row.hidden {
+  display: none;
+}
+
+.ab-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+
+.ab-slider-title {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ab-slider {
+  width: 100%;
+  height: 4px;
+  background: var(--track);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.drawer-footer-credit {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--hairline-soft);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.meta-item-link {
+  grid-column: span 2;
+}
+
+.drawer-source-link {
+  color: var(--signal);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+
+/* ============================================================================
+   NASA Open MCT Mission Control Design System Overhaul
+   ============================================================================ */
+
+/* 1. Open MCT Telemetry Viewport Reticle Framing */
+.mct-viewport-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  z-index: 4;
+}
+
+.mct-hud-reticle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  opacity: 0.85;
+}
+
+.mct-reticle-tl {
+  top: 14px;
+  left: 14px;
+  border-top: 2px solid var(--c-ocean);
+  border-left: 2px solid var(--c-ocean);
+}
+
+.mct-reticle-tr {
+  top: 14px;
+  right: 14px;
+  border-top: 2px solid var(--c-ocean);
+  border-right: 2px solid var(--c-ocean);
+}
+
+.mct-reticle-bl {
+  bottom: 14px;
+  left: 14px;
+  border-bottom: 2px solid var(--c-ocean);
+  border-left: 2px solid var(--c-ocean);
+}
+
+.mct-reticle-br {
+  bottom: 14px;
+  right: 14px;
+  border-bottom: 2px solid var(--c-ocean);
+  border-right: 2px solid var(--c-ocean);
+}
+
+.mct-hud-header {
+  position: absolute;
+  top: 14px;
+  left: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+}
+
+.mct-hud-tag {
+  color: var(--signal);
+  background: var(--signal-wash);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.mct-hud-title {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.mct-hud-status {
+  color: #2dd4bf;
+  padding: 2px 6px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  border-radius: 2px;
+  font-size: 9px;
+}
+
+.mct-hud-footer {
+  position: absolute;
+  bottom: 14px;
+  left: 38px;
+  right: 38px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+}
+
+@media (max-width: 900px) {
+  .mct-hud-header,
+  .mct-hud-footer {
+    display: none;
+  }
+}
+
+/* 2. Left Rail: Open MCT Telemetry Baseline Scale */
+.hud-telemetry-scale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline-soft);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--dim);
+}
+
+.scale-track {
+  position: relative;
+  flex: 1;
+  height: 3px;
+  background: var(--track);
+  border-radius: 2px;
+}
+
+.scale-pip {
+  position: absolute;
+  top: -3px;
+  left: 78%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 1px solid #ffffff;
+}
+
+/* 3. Open MCT Panel & Layer Selectors */
+.frame .hud-panel {
+  border: 1px solid var(--hairline-2);
+  background: #0d1219;
+}
+
+.frame .hud-kicker {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--signal);
+}
+
+.frame .globe-layer-controls {
+  border: 1px solid var(--hairline-2);
+  background: #0d1219;
+}
+
+.frame .layer-btn {
+  position: relative;
+  border-left: 3px solid transparent;
+}
+
+.frame .layer-btn:hover {
+  border-left-color: var(--hairline-2);
+}
+
+.frame .layer-btn.active {
+  border-left: 3px solid var(--signal);
+}
+
+/* 4. Geographic Navigation Targets */
+.frame .nav-target-btn {
+  border: 1px solid var(--hairline-2);
+  background: #0d121a;
+  gap: 10px;
+}
+
+.frame .nav-target-btn:hover {
+  border-color: var(--c-ocean);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.frame .nav-icon {
+  flex-shrink: 0;
+  color: var(--c-ocean);
+}
+
+/* 5. Right Rail: Channel Strip Avionics */
+.frame .channel-strip {
+  border: 1px solid var(--hairline-2);
+  background: #0e141c;
+  border-left: 3px solid var(--strip-color, var(--hairline));
+}
+
+.frame .strip-dataset-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hairline-2);
+  border-radius: 2px;
+  padding: 2px 6px;
+  letter-spacing: 0.06em;
+}
+
+.frame .strip-equation-badge {
+  background: #090e15;
+  border: 1px solid #1c2637;
+  border-radius: 3px;
+  padding: 4px 8px;
+}
+
+.frame .btn-mute.active {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+.frame .btn-solo.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+  font-weight: 700;
+}
+
+/* 6. Bottom Dock: Open MCT Time Conductor */
+.frame .orchestra-dock {
+  background: #0c1118;
+  border-top: 1px solid var(--hairline-2);
+}
+
+.frame .transport-btn {
+  border: 1px solid var(--hairline-2);
+  background: #111722;
+}
+
+.frame .transport-btn:hover {
+  background: #182232;
+  border-color: #334460;
+}
+
+.frame .transport-btn.btn-play {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 700;
 }

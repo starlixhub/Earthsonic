@@ -40,9 +40,9 @@
   --c-ice: #9db2c4;
 
   /* ---- Type -------------------------------------------------------------- */
-  --font-body: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-display: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
   --fs-micro: 10px;
   --fs-label: 11px;
@@ -179,7 +179,7 @@
   --color-green: #3d9b6d;
   --color-text: var(--text);
   --color-muted: var(--muted);
-  --backdrop-blur: blur(10px);
+  --backdrop-blur: none;
 
   --globe-bg: var(--ink);
   --globe-navy: var(--panel);
